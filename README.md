@@ -1,4 +1,4 @@
-# Rice Marketplace App 🌾
+# Farmmart🌾
 
 A Flutter-based marketplace connecting farmers with buyers for Sri Lankan rice varieties. Supports image uploads, product listings, and purchases.
 

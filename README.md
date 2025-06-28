@@ -1,56 +1,34 @@
-<<<<<<< HEAD
-# newadd
+# FarmMart 🌱
 
-A new Flutter project.
+FarmMart is a **Sri Lankan agricultural marketplace** app built with Flutter & Firebase, connecting farmers, buyers, and sellers for seamless trade of crops, equipment, and services.
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-=======
-# Farmmart🌾
-
-A Flutter-based marketplace connecting farmers with buyers for Sri Lankan rice varieties. Supports image uploads, product listings, and purchases.
-
-![App Screenshot](screenshots/home.png) *(Add your screenshot path)*
+![FarmMart Banner](https://example.com/farmmart-banner.jpg) *(Replace with actual image link)*
 
 ## Features ✨
+- **Buy/Sell Crops**: List and purchase fresh produce (rice, vegetables, fruits).
+- **Farmer Profiles**: Verify and showcase farmer details.
+- **Real-Time Chat**: Firebase-powered messaging between buyers/sellers.
+- **Price Trends**: Track market prices for crops.
+- **Delivery Tracking**: Integrated with local logistics.
+- **Multi-Language**: Sinhala, Tamil, and English support.
 
-- **Farmer Posts**
-  - Upload rice products with images (using ImgBB)
-  - Set prices per kg (LKR)
-  - Categorize as Paddy/Rice
-  - Add descriptions
+## Tech Stack 🛠️
+- **Frontend**: Flutter (Dart)
+- **Backend**: Firebase (Auth, Firestore, Cloud Storage, Cloud Functions)
+- **State Management**: Riverpod
+- **Image Storage**: Firebase Storage + Cloudinary (optimized)
+- **Maps**: Google Maps API
+- **Payment**: Stripe/Local gateways (e.g., Dialog, FriMi)
 
-- **Buyer Experience**
-  - Browse rice listings with filters
-  - Search by rice type/description
-  - Purchase with quantity selection
-  - Delivery address management
-
-- **Core Technologies**
-  - Firebase Firestore (NoSQL database)
-  - ImgBB (Free image hosting)
-  - Flutter State Management
-
-## Setup Guide 🛠️
+## Setup Guide 🚀
 
 ### Prerequisites
-- Flutter 3.0+
-- Firebase project
-- ImgBB API key (free)
+- Flutter SDK (>=3.0.0)
+- Firebase account
+- Android Studio/Xcode (for emulators)
 
 ### Installation
-1. **Clone the repo**
+1. **Clone the repo**:
    ```bash
-   git clone https://github.com/yourusername/rice-marketplace.git
-   cd rice-marketplace
->>>>>>> 3db87e2646d273243d8902f572b5cf70953d6444
+   git clone https://github.com/yourusername/FarmMart.git
+   cd FarmMart

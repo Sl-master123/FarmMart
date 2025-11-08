@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "279899751697",
+    "project_id": "farmmart-58638",
+    "storage_bucket": "farmmart-58638.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:279899751697:android:2197c7abe9d137f395b8b0",
+        "android_client_info": {
+          "package_name": "com.example.adddata"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC3hnjHYypULr0Dd_n4zvQH4Mi6kKLG3f8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:279899751697:android:a4fb235351328aac95b8b0",
+        "android_client_info": {
+          "package_name": "com.example.farmmart"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC3hnjHYypULr0Dd_n4zvQH4Mi6kKLG3f8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:279899751697:android:e7c5c2f410bfaa1e95b8b0",
+        "android_client_info": {
+          "package_name": "com.example.newadd"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC3hnjHYypULr0Dd_n4zvQH4Mi6kKLG3f8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,61 @@
+name: newadd
+description: "A new Flutter project."
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Firebase
+  firebase_core: ^3.15.2
+  cloud_firestore: ^5.6.12
+  firebase_storage: ^12.4.10
+
+  # Image Picker
+  image_picker: ^1.1.1
+
+  # UI and Icons
+  cupertino_icons: ^1.0.6
+
+  # For external links (if needed in future)
+  url_launcher: ^6.2.5
+
+  # Date formatting
+  intl: ^0.20.2
+  firebase_auth: ^5.7.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/farmmart.png
+    - assets/back.jpg
+    - assets/logo.png
+    - assets/logo_ico.png
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/logo_ico.png"
+  min_sdk_android: 21
+  web:
+    generate: true
+    image_path: "assets/logo_ico.png"
+    background_color: "#ffffff"
+    theme_color: "#ffffff"
+  windows:
+    generate: true
+    image_path: "assets/logo_ico.png"
+    icon_size: 48
+  macos:
+    generate: true
+    image_path: "assets/logo_ico.png"

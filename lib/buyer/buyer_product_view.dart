@@ -328,6 +328,82 @@ class _BuyerProductViewState extends State<BuyerProductView> {
                             ),
                           ],
                         ),
+                        const SizedBox(height: 24),
+                        const Divider(),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Customer Reviews',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        reviews.isEmpty
+                            ? const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(16.0),
+                                  child: Text(
+                                    'No reviews yet. Be the first to review!',
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
+                                ),
+                              )
+                            : ListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: reviews.length,
+                                itemBuilder: (context, index) {
+                                  final review = reviews[index];
+                                  final rating = (review['rating'] ?? 0)
+                                      .toDouble();
+                                  final reviewText = review['review'] ?? '';
+
+                                  return Card(
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(12),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              ...List.generate(5, (i) {
+                                                return Icon(
+                                                  i < rating
+                                                      ? Icons.star
+                                                      : Icons.star_border,
+                                                  color: Colors.amber,
+                                                  size: 16,
+                                                );
+                                              }),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                rating.toStringAsFixed(1),
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          if (reviewText.isNotEmpty) ...[
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              reviewText,
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                        const SizedBox(height: 16),
                       ],
                     ),
                   ),

@@ -95,16 +95,10 @@ class _BuyerHomeState extends State<BuyerHome> {
   void _onBottomNavTapped(int index) {
     if (index == _selectedIndex) return;
 
-    setState(() => _selectedIndex = index);
-
     switch (index) {
       case 0:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => BuyerHome(userEmail: widget.userEmail),
-          ),
-        );
+        // Already on home, just reset the index
+        setState(() => _selectedIndex = 0);
         break;
       case 1:
         Navigator.push(
@@ -112,7 +106,10 @@ class _BuyerHomeState extends State<BuyerHome> {
           MaterialPageRoute(
             builder: (_) => BuyerCart(userEmail: widget.userEmail),
           ),
-        );
+        ).then((_) {
+          // Reset to home when returning
+          setState(() => _selectedIndex = 0);
+        });
         break;
       case 2:
         Navigator.push(
@@ -120,7 +117,10 @@ class _BuyerHomeState extends State<BuyerHome> {
           MaterialPageRoute(
             builder: (_) => BuyerOrderProcess(userEmail: widget.userEmail),
           ),
-        );
+        ).then((_) {
+          // Reset to home when returning
+          setState(() => _selectedIndex = 0);
+        });
         break;
       case 3:
         Navigator.push(
@@ -128,7 +128,10 @@ class _BuyerHomeState extends State<BuyerHome> {
           MaterialPageRoute(
             builder: (_) => ProfilePage(userEmail: widget.userEmail),
           ),
-        );
+        ).then((_) {
+          // Reset to home when returning
+          setState(() => _selectedIndex = 0);
+        });
         break;
     }
   }
@@ -316,47 +319,46 @@ class _BuyerHomeState extends State<BuyerHome> {
                     height: 100,
                     child: Center(child: Icon(Icons.broken_image)),
                   ),
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'NEW',
-                    style: TextStyle(color: Colors.red, fontSize: 10),
-                  ),
-                  Text(
-                    'LKR ${product['price']}',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green,
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'NEW',
+                      style: TextStyle(color: Colors.red, fontSize: 9),
                     ),
-                  ),
-                  Text(
-                    product['riceType'],
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                  const Text(
-                    "1kg",
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 4),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: IconButton(
-                      icon: const Icon(
-                        Icons.add_shopping_cart,
+                    const SizedBox(height: 1),
+                    Text(
+                      'LKR ${product['price']}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
                         color: Colors.green,
                       ),
-                      onPressed: () {
-                        // Optional: Add to cart logic
-                      },
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 1),
+                    Text(
+                      product['riceType'],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    const Text(
+                      "1kg",
+                      style: TextStyle(fontSize: 10, color: Colors.grey),
+                    ),
+                    const Spacer(),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: SizedBox(height: 28, width: 28),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

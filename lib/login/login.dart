@@ -123,32 +123,32 @@ class _LoginPageState extends State<LoginPage> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
                     child: Form(
                       key: _formKey,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Stack(
-                            children: [
-                              Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.only(top: 10),
-                                  child: Image.asset(
-                                    'assets/farmmart.png', // ✅ Ensure this exists
-                                    width: 200,
-                                    height: 200,
-                                    fit: BoxFit.contain,
-                                  ),
-                                ),
-                              ),
-                            ],
+                          Image.asset(
+                            'assets/farmmart.png', // ✅ Ensure this exists
+                            width: 160,
+                            height: 160,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.agriculture,
+                                size: 80,
+                                color: Colors.green,
+                              );
+                            },
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 12),
 
                           // Email
                           TextFormField(
                             controller: _email,
+                            keyboardType: TextInputType.emailAddress,
+                            style: const TextStyle(fontSize: 14),
                             decoration: _inputDecoration(
                               label: 'Email',
                               hint: 'you@example.com',
@@ -158,21 +158,25 @@ class _LoginPageState extends State<LoginPage> {
                                 ? 'Enter a valid email'
                                 : null,
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
 
                           // Password
                           TextFormField(
                             controller: _password,
                             obscureText: _obscure,
+                            style: const TextStyle(fontSize: 14),
                             decoration: _inputDecoration(
                               label: 'Password',
                               hint: '••••••••',
                               icon: Icons.lock_outline,
                               suffix: IconButton(
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
                                 icon: Icon(
                                   _obscure
                                       ? Icons.visibility
                                       : Icons.visibility_off,
+                                  size: 20,
                                 ),
                                 onPressed: () =>
                                     setState(() => _obscure = !_obscure),
@@ -187,23 +191,40 @@ class _LoginPageState extends State<LoginPage> {
                             alignment: Alignment.centerRight,
                             child: TextButton(
                               onPressed: _loading ? null : _resetPassword,
-                              child: const Text('Forgot password?'),
+                              child: const Text(
+                                'Forgot password?',
+                                style: TextStyle(fontSize: 13),
+                              ),
                             ),
                           ),
 
                           if (_error != null) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              _error!,
-                              style: const TextStyle(color: Colors.red),
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                _error!,
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 12,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
                             ),
                             TextButton(
                               onPressed: _resendVerification,
-                              child: const Text('Resend verification email'),
+                              child: const Text(
+                                'Resend verification email',
+                                style: TextStyle(fontSize: 12),
+                              ),
                             ),
                           ],
 
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 12),
                           SizedBox(
                             width: double.infinity,
                             height: 48,
@@ -217,8 +238,13 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               ),
                               child: _loading
-                                  ? const CircularProgressIndicator(
-                                      strokeWidth: 2,
+                                  ? const SizedBox(
+                                      height: 24,
+                                      width: 24,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
                                     )
                                   : const Text(
                                       'Login',
@@ -226,12 +252,25 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                             ),
                           ),
-                          const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          const SizedBox(height: 8),
+                          Wrap(
+                            alignment: WrapAlignment.center,
+                            crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
-                              const Text("Don't have an account? "),
+                              const Text(
+                                "Don't have an account? ",
+                                style: TextStyle(fontSize: 13),
+                              ),
                               TextButton(
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
                                 onPressed: () {
                                   Navigator.pushReplacement(
                                     context,
@@ -240,7 +279,10 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                   );
                                 },
-                                child: const Text('Create account'),
+                                child: const Text(
+                                  'Create account',
+                                  style: TextStyle(fontSize: 13),
+                                ),
                               ),
                             ],
                           ),
@@ -265,13 +307,26 @@ class _LoginPageState extends State<LoginPage> {
   }) {
     return InputDecoration(
       labelText: label,
+      labelStyle: const TextStyle(fontSize: 13),
       hintText: hint,
-      prefixIcon: Icon(icon, color: Colors.green),
+      hintStyle: const TextStyle(fontSize: 13),
+      prefixIcon: Icon(icon, color: Colors.green, size: 20),
       suffixIcon: suffix,
       filled: true,
       fillColor: Colors.green[50],
-      contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.green.shade200),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.green.shade200),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.green, width: 2),
+      ),
     );
   }
 }

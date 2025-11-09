@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:newadd/seller/seller_add_post.dart';
+import 'package:newadd/seller/seller_edit_post.dart';
 import 'package:newadd/seller/seller_order_process.dart';
 import 'package:newadd/profile.dart';
 
@@ -15,11 +16,64 @@ class SellerHome extends StatefulWidget {
 class _SellerHomeState extends State<SellerHome> {
   int _selectedIndex = 0;
   final PageController _pageController = PageController();
+  final Map<String, double> _productRatings = {};
 
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  Future<double> _getAverageRating(String productId) async {
+    // Check cache first
+    if (_productRatings.containsKey(productId)) {
+      return _productRatings[productId]!;
+    }
+
+    try {
+      final feedbackSnapshot = await FirebaseFirestore.instance
+          .collection('feedback')
+          .where('product_id', isEqualTo: productId)
+          .get();
+
+      if (feedbackSnapshot.docs.isEmpty) {
+        _productRatings[productId] = 0.0;
+        return 0.0;
+      }
+
+      double totalRating = 0.0;
+      int count = 0;
+
+      for (var doc in feedbackSnapshot.docs) {
+        final rating = doc.data()['rating'];
+        if (rating != null) {
+          totalRating += (rating is int ? rating.toDouble() : rating);
+          count++;
+        }
+      }
+
+      final averageRating = count > 0 ? totalRating / count : 0.0;
+      _productRatings[productId] = averageRating;
+      return averageRating;
+    } catch (e) {
+      print('Error fetching ratings: $e');
+      return 0.0;
+    }
+  }
+
+  Widget _buildRatingStars(double rating, {double size = 14}) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(5, (index) {
+        if (index < rating.floor()) {
+          return Icon(Icons.star, color: Colors.amber, size: size);
+        } else if (index < rating && rating % 1 >= 0.5) {
+          return Icon(Icons.star_half, color: Colors.amber, size: size);
+        } else {
+          return Icon(Icons.star_border, color: Colors.amber, size: size);
+        }
+      }),
+    );
   }
 
   void _onItemTapped(int index) {
@@ -31,9 +85,7 @@ class _SellerHomeState extends State<SellerHome> {
         ),
       );
     } else {
-      setState(() {
-        _selectedIndex = index;
-      });
+      setState(() => _selectedIndex = index);
     }
   }
 
@@ -41,7 +93,7 @@ class _SellerHomeState extends State<SellerHome> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Home"),
+        title: const Text("Welcome"),
         backgroundColor: Colors.orange,
         foregroundColor: Colors.white,
       ),
@@ -104,12 +156,17 @@ class _SellerHomeState extends State<SellerHome> {
         }
         final docs = snapshot.data!.docs;
         return GridView.builder(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.fromLTRB(
+            8,
+            8,
+            8,
+            88,
+          ), // keep clear of BottomAppBar/FAB
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
             mainAxisSpacing: 8,
             crossAxisSpacing: 8,
-            childAspectRatio: 0.75,
+            childAspectRatio: 0.65, // more vertical space per tile
           ),
           itemCount: docs.length,
           itemBuilder: (context, index) {
@@ -134,26 +191,132 @@ class _SellerHomeState extends State<SellerHome> {
         }
         final docs = snapshot.data!.docs;
         return ListView.builder(
+          padding: const EdgeInsets.only(bottom: 88),
           itemCount: docs.length,
           itemBuilder: (context, index) {
             final product = docs[index].data() as Map<String, dynamic>;
             final docId = docs[index].id;
-            return ListTile(
-              title: Text(product['type'] ?? 'No title'),
-              subtitle: Text('LKR ${product['price']}'),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () {
-                      FirebaseFirestore.instance
-                          .collection('seller_posts')
-                          .doc(docId)
-                          .delete();
-                    },
-                  ),
-                ],
+            return Card(
+              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: ListTile(
+                leading: product['image_url'] != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          product['image_url'],
+                          width: 50,
+                          height: 50,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) =>
+                              const Icon(Icons.broken_image),
+                        ),
+                      )
+                    : const Icon(Icons.image_not_supported),
+                title: Text(product['type'] ?? 'No title'),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'LKR ${product['price']}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
+                    ),
+                    Text(
+                      '${product['condition'] ?? ''}',
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 4),
+                    // Rating display
+                    FutureBuilder<double>(
+                      future: _getAverageRating(docId),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) {
+                          return const SizedBox(height: 16);
+                        }
+                        final rating = snapshot.data!;
+                        if (rating == 0.0) {
+                          return const Text(
+                            'No reviews yet',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          );
+                        }
+                        return Row(
+                          children: [
+                            _buildRatingStars(rating, size: 14),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${rating.toStringAsFixed(1)} / 5',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.blue),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => SellerEditPost(
+                              userEmail: widget.userEmail,
+                              postId: docId,
+                              postData: product,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Delete Product'),
+                            content: const Text(
+                              'Are you sure you want to delete this product?',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('Cancel'),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  FirebaseFirestore.instance
+                                      .collection('seller_posts')
+                                      .doc(docId)
+                                      .delete();
+                                  Navigator.pop(context);
+                                },
+                                child: const Text(
+                                  'Delete',
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
             );
           },
@@ -162,86 +325,118 @@ class _SellerHomeState extends State<SellerHome> {
     );
   }
 
+  // ===== Overflow-proof product card =====
   Widget _buildProductCard(Map<String, dynamic> product) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade200),
-        borderRadius: BorderRadius.circular(12),
+    final imageUrl = (product['image_url'] ?? '').toString();
+    final productId = product['id'] ?? '';
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Material(
         color: Colors.white,
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 2, offset: Offset(0, 1)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (product['image_url'] != null)
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(12),
-              ),
-              child: Image.network(
-                product['image_url'],
-                height: 100,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return const SizedBox(
-                    height: 100,
-                    child: Center(child: Icon(Icons.broken_image)),
-                  );
-                },
-              ),
-            )
-          else
-            const SizedBox(
-              height: 100,
-              child: Center(child: Icon(Icons.image_not_supported)),
+        elevation: 1,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Fixed ratio image so every tile has predictable top area
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: (imageUrl.isNotEmpty)
+                  ? Image.network(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) =>
+                          const Center(child: Icon(Icons.broken_image)),
+                    )
+                  : const Center(child: Icon(Icons.image_not_supported)),
             ),
-          Padding(
-            padding: const EdgeInsets.all(8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'NEW',
-                  style: TextStyle(color: Colors.red, fontSize: 10),
-                ),
-                Text(
-                  'LKR ${product['price'] ?? '0'}',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green,
-                  ),
-                ),
-                Text(
-                  product['type'] ?? 'Unknown',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 14),
-                ),
-                const Text(
-                  '1kg',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-                const SizedBox(height: 4),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.add_shopping_cart,
-                      color: Colors.green,
+
+            // The rest expands to the available height of the grid cell
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'NEW',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                    onPressed: () {
-                      // Add to cart logic (if needed)
-                    },
-                  ),
+                    const SizedBox(height: 2),
+
+                    Text(
+                      'LKR ${product['price'] ?? '0'}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+
+                    Text(
+                      (product['type'] ?? 'Unknown').toString(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                    const SizedBox(height: 2),
+
+                    const Text(
+                      '1kg',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 2),
+
+                    // Rating display
+                    if (productId.isNotEmpty)
+                      FutureBuilder<double>(
+                        future: _getAverageRating(productId),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData) {
+                            return const SizedBox(height: 14);
+                          }
+                          final rating = snapshot.data!;
+                          if (rating == 0.0) {
+                            return const Text(
+                              'No reviews yet',
+                              style: TextStyle(fontSize: 9, color: Colors.grey),
+                            );
+                          }
+                          return Row(
+                            children: [
+                              _buildRatingStars(rating, size: 12),
+                              const SizedBox(width: 4),
+                              Text(
+                                rating.toStringAsFixed(1),
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.grey,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+
+                    const Spacer(), // pushes button to bottom safely
+
+                    Align(alignment: Alignment.centerRight),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

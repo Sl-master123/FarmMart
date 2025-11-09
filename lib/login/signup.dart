@@ -140,7 +140,7 @@ class _SignupPageState extends State<SignupPage> {
                             controller: _name,
                             decoration: _inputDecoration(
                               label: 'Full Name',
-                              hint: 'John Doe',
+                              hint: 'Your name ',
                               icon: Icons.person_outline,
                             ),
                             validator: (v) => (v == null || v.trim().isEmpty)

@@ -181,20 +181,29 @@ class _BuyerBuyPageState extends State<BuyerBuyPage> {
               children: [
                 const Text(
                   'Total Cost:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
-                Text(
-                  'LKR ${widget.totalPrice.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green,
-                  ),
+                Row(
+                  children: [
+                    const Text(
+                      'LKR ',
+                      style: TextStyle(color: Colors.grey, fontSize: 14),
+                    ),
+                    Text(
+                      '${widget.totalPrice.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue,
+                        fontSize: 22,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
             const SizedBox(height: 30),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
               onPressed: _confirmOrder,
               child: const Text(
                 'Confirm Order',

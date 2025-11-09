@@ -4,6 +4,7 @@ import 'package:newadd/seller/seller_add_post.dart';
 import 'package:newadd/seller/seller_edit_post.dart';
 import 'package:newadd/seller/seller_order_process.dart';
 import 'package:newadd/profile.dart';
+import 'package:newadd/login/login.dart';
 
 class SellerHome extends StatefulWidget {
   final String userEmail;
@@ -34,6 +35,7 @@ class _SellerHomeState extends State<SellerHome> {
       final feedbackSnapshot = await FirebaseFirestore.instance
           .collection('feedback')
           .where('product_id', isEqualTo: productId)
+          .limit(100) // Limit to recent 100 reviews for performance
           .get();
 
       if (feedbackSnapshot.docs.isEmpty) {
@@ -56,7 +58,6 @@ class _SellerHomeState extends State<SellerHome> {
       _productRatings[productId] = averageRating;
       return averageRating;
     } catch (e) {
-      print('Error fetching ratings: $e');
       return 0.0;
     }
   }
@@ -76,6 +77,22 @@ class _SellerHomeState extends State<SellerHome> {
     );
   }
 
+  String _getProductUnit(String productType) {
+    final type = productType.toLowerCase();
+    // Equipment and Vehicles use "1 unit"
+    if (type.contains('equipment') || type.contains('vehicle')) {
+      return '1 unit';
+    }
+    // Fertilizers, Seeds, and Pesticides use "1kg"
+    else if (type.contains('fertilizer') ||
+        type.contains('seed') ||
+        type.contains('pesticide')) {
+      return '1kg';
+    }
+    // Default to "1 unit" for unknown types
+    return '1 unit';
+  }
+
   void _onItemTapped(int index) {
     if (index == 2) {
       Navigator.push(
@@ -89,43 +106,124 @@ class _SellerHomeState extends State<SellerHome> {
     }
   }
 
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm Logout'),
+          content: const Text('Are you sure you want to logout?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                  (route) => false,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Logout'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Welcome"),
-        backgroundColor: Colors.orange,
-        foregroundColor: Colors.white,
-      ),
-      body: _buildPageContent(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _onItemTapped(2),
-        backgroundColor: Colors.deepOrange,
-        elevation: 4,
-        child: const Icon(Icons.add, size: 32),
-      ),
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8,
-        child: SizedBox(
-          height: 64,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  _buildNavItem(Icons.home, 0, 'Home'),
-                  _buildNavItem(Icons.shopping_bag_outlined, 1, 'My Shop'),
-                ],
+    return WillPopScope(
+      onWillPop: () async {
+        final shouldExit = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Exit App'),
+            content: const Text('Are you sure you want to exit?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
               ),
-              Row(
-                children: [
-                  _buildNavItem(Icons.delivery_dining_outlined, 3, 'Orders'),
-                  _buildNavItem(Icons.person_outline, 4, 'Profile'),
-                ],
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Exit'),
               ),
             ],
+          ),
+        );
+        return shouldExit ?? false;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          title: Row(
+            children: [
+              const Icon(Icons.storefront, size: 22),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Hello, ${widget.userEmail.split('@')[0]}!',
+                  style: const TextStyle(fontSize: 18),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.orange,
+          foregroundColor: Colors.white,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.logout),
+              tooltip: 'Logout',
+              onPressed: () => _showLogoutDialog(context),
+            ),
+          ],
+        ),
+        body: _buildPageContent(),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => _onItemTapped(2),
+          backgroundColor: Colors.deepOrange,
+          elevation: 4,
+          child: const Icon(Icons.add, size: 32),
+        ),
+        bottomNavigationBar: BottomAppBar(
+          shape: const CircularNotchedRectangle(),
+          notchMargin: 8,
+          child: SizedBox(
+            height: 64,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    _buildNavItem(Icons.home, 0, 'Home'),
+                    _buildNavItem(Icons.shopping_bag_outlined, 1, 'My Shop'),
+                  ],
+                ),
+                Row(
+                  children: [
+                    _buildNavItem(Icons.delivery_dining_outlined, 3, 'Orders'),
+                    _buildNavItem(Icons.person_outline, 4, 'Profile'),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -148,13 +246,19 @@ class _SellerHomeState extends State<SellerHome> {
   }
 
   Widget _buildAllPosts() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('seller_posts').snapshots(),
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _fetchAndSortProducts(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        final docs = snapshot.data!.docs;
+
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const Center(child: Text('No products available'));
+        }
+
+        final products = snapshot.data!;
+
         return GridView.builder(
           padding: const EdgeInsets.fromLTRB(
             8,
@@ -168,15 +272,65 @@ class _SellerHomeState extends State<SellerHome> {
             crossAxisSpacing: 8,
             childAspectRatio: 0.65, // more vertical space per tile
           ),
-          itemCount: docs.length,
+          itemCount: products.length,
           itemBuilder: (context, index) {
-            final product = docs[index].data() as Map<String, dynamic>;
-            product['id'] = docs[index].id;
-            return _buildProductCard(product);
+            return _buildProductCard(products[index]);
           },
         );
       },
     );
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchAndSortProducts() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('seller_posts')
+          .get();
+
+      // Create list with products and their ratings
+      final List<Map<String, dynamic>> productsWithRatings = [];
+
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        final productId = doc.id;
+
+        // Get average rating for each product
+        final rating = await _getAverageRating(productId);
+
+        productsWithRatings.add({
+          'id': productId,
+          'type': data['type'],
+          'price': data['price'],
+          'condition': data['condition'],
+          'description': data['description'],
+          'image_url': data['image_url'],
+          'created_at': data['created_at'],
+          'user_email': data['user_email'],
+          'rating': rating,
+        });
+      }
+
+      // Sort by rating (highest first), then by created_at (newest first)
+      productsWithRatings.sort((a, b) {
+        final ratingCompare = (b['rating'] as double).compareTo(
+          a['rating'] as double,
+        );
+        if (ratingCompare != 0) return ratingCompare;
+
+        // If ratings are equal, sort by date
+        final aTime = a['created_at'] as Timestamp?;
+        final bTime = b['created_at'] as Timestamp?;
+        if (aTime == null && bTime == null) return 0;
+        if (aTime == null) return 1;
+        if (bTime == null) return -1;
+        return bTime.compareTo(aTime);
+      });
+
+      return productsWithRatings;
+    } catch (e) {
+      print('Error fetching and sorting products: $e');
+      return [];
+    }
   }
 
   Widget _buildMyPosts() {
@@ -216,16 +370,47 @@ class _SellerHomeState extends State<SellerHome> {
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'LKR ${product['price']}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green,
-                      ),
+                    Row(
+                      children: [
+                        const Text(
+                          'LKR ',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        Text(
+                          '${product['price']}',
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.deepOrange,
+                          ),
+                        ),
+                      ],
                     ),
-                    Text(
-                      '${product['condition'] ?? ''}',
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    Row(
+                      children: [
+                        Text(
+                          _getProductUnit(product['type'] ?? ''),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        const Text(
+                          ' · ',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                        Text(
+                          '${product['condition'] ?? ''}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 4),
                     // Rating display
@@ -328,7 +513,6 @@ class _SellerHomeState extends State<SellerHome> {
   // ===== Overflow-proof product card =====
   Widget _buildProductCard(Map<String, dynamic> product) {
     final imageUrl = (product['image_url'] ?? '').toString();
-    final productId = product['id'] ?? '';
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
@@ -358,25 +542,29 @@ class _SellerHomeState extends State<SellerHome> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'NEW',
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-
-                    Text(
-                      'LKR ${product['price'] ?? '0'}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green,
-                      ),
+                    Row(
+                      children: [
+                        const Text(
+                          'LKR ',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            '${product['price'] ?? '0'}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.deepOrange,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 2),
 
@@ -388,49 +576,18 @@ class _SellerHomeState extends State<SellerHome> {
                     ),
                     const SizedBox(height: 2),
 
-                    const Text(
-                      '1kg',
+                    Text(
+                      _getProductUnit(product['type'] ?? ''),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 4),
 
-                    // Rating display
-                    if (productId.isNotEmpty)
-                      FutureBuilder<double>(
-                        future: _getAverageRating(productId),
-                        builder: (context, snapshot) {
-                          if (!snapshot.hasData) {
-                            return const SizedBox(height: 14);
-                          }
-                          final rating = snapshot.data!;
-                          if (rating == 0.0) {
-                            return const Text(
-                              'No reviews yet',
-                              style: TextStyle(fontSize: 9, color: Colors.grey),
-                            );
-                          }
-                          return Row(
-                            children: [
-                              _buildRatingStars(rating, size: 12),
-                              const SizedBox(width: 4),
-                              Text(
-                                rating.toStringAsFixed(1),
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.grey,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
+                    // Rating display - now using pre-fetched rating from product data
+                    _buildRatingStars(product['rating'] ?? 0.0, size: 14),
 
                     const Spacer(), // pushes button to bottom safely
-
-                    Align(alignment: Alignment.centerRight),
                   ],
                 ),
               ),

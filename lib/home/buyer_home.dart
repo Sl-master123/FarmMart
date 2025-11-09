@@ -4,6 +4,7 @@ import 'package:newadd/buyer/buyer_product_view.dart';
 import 'package:newadd/buyer/buyer_cart.dart';
 import 'package:newadd/buyer/buyer_order_process.dart';
 import 'package:newadd/profile.dart';
+import 'package:newadd/login/login.dart';
 
 class BuyerHome extends StatefulWidget {
   final String userEmail;
@@ -48,20 +49,47 @@ class _BuyerHomeState extends State<BuyerHome> {
   Future<void> _fetchProducts() async {
     try {
       final snapshot = await _firestore.collection('farmer_posts').get();
-      final dataList = snapshot.docs.map((doc) {
+
+      // Create list with products and their ratings
+      final List<Map<String, dynamic>> dataListWithRatings = [];
+
+      for (var doc in snapshot.docs) {
         final data = doc.data();
-        return {
-          'id': doc.id,
+        final productId = doc.id;
+
+        // Get average rating for each product
+        final rating = await _getAverageRating(productId);
+
+        dataListWithRatings.add({
+          'id': productId,
           'riceType': data['rice_type'] ?? 'Unknown',
           'price': data['price'] ?? '0.00',
           'productType': data['product_type'] ?? 'rice',
           'description': data['description'] ?? '',
-          'imageUrl': data['image_url'], // ✅ use image_url from Firestore
-        };
-      }).toList();
+          'imageUrl': data['image_url'],
+          'createdAt': data['created_at'],
+          'rating': rating,
+        });
+      }
+
+      // Sort by rating (highest first), then by created_at (newest first)
+      dataListWithRatings.sort((a, b) {
+        final ratingCompare = (b['rating'] as double).compareTo(
+          a['rating'] as double,
+        );
+        if (ratingCompare != 0) return ratingCompare;
+
+        // If ratings are equal, sort by date
+        final aTime = a['createdAt'] as Timestamp?;
+        final bTime = b['createdAt'] as Timestamp?;
+        if (aTime == null && bTime == null) return 0;
+        if (aTime == null) return 1;
+        if (bTime == null) return -1;
+        return bTime.compareTo(aTime);
+      });
 
       setState(() {
-        _allProducts = dataList;
+        _allProducts = dataListWithRatings;
         _applyFilters();
       });
     } catch (e) {
@@ -69,6 +97,39 @@ class _BuyerHomeState extends State<BuyerHome> {
         context,
       ).showSnackBar(SnackBar(content: Text('Error fetching products: $e')));
     }
+  }
+
+  Future<double> _getAverageRating(String productId) async {
+    try {
+      final snapshot = await _firestore
+          .collection('feedback')
+          .where('product_id', isEqualTo: productId)
+          .limit(100) // Limit to recent 100 reviews for performance
+          .get();
+
+      if (snapshot.docs.isEmpty) return 0.0;
+
+      double total = 0;
+      for (var doc in snapshot.docs) {
+        total += (doc.data()['rating'] ?? 0).toDouble();
+      }
+      return total / snapshot.docs.length;
+    } catch (e) {
+      return 0.0;
+    }
+  }
+
+  Widget _buildRatingStars(double rating, {double size = 14}) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(5, (index) {
+        return Icon(
+          index < rating.round() ? Icons.star : Icons.star_border,
+          color: Colors.amber,
+          size: size,
+        );
+      }),
+    );
   }
 
   void _applyFilters() {
@@ -90,6 +151,41 @@ class _BuyerHomeState extends State<BuyerHome> {
         return matchesSearch && matchesType && matchesProductType;
       }).toList();
     });
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm Logout'),
+          content: const Text('Are you sure you want to logout?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                  (route) => false,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Logout'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _onBottomNavTapped(int index) {
@@ -139,12 +235,55 @@ class _BuyerHomeState extends State<BuyerHome> {
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: () async => false, // Disable physical back button
+      onWillPop: () async {
+        final shouldExit = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Exit App'),
+            content: const Text('Are you sure you want to exit?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Exit'),
+              ),
+            ],
+          ),
+        );
+        return shouldExit ?? false;
+      },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text("Home"),
+          automaticallyImplyLeading: false,
+          title: Row(
+            children: [
+              const Icon(Icons.shopping_bag, size: 22),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Welcome, ${widget.userEmail.split('@')[0]}!',
+                  style: const TextStyle(fontSize: 18),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
           backgroundColor: Colors.blue,
           foregroundColor: Colors.white,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.logout),
+              tooltip: 'Logout',
+              onPressed: () => _showLogoutDialog(context),
+            ),
+          ],
         ),
 
         body: Column(
@@ -210,7 +349,7 @@ class _BuyerHomeState extends State<BuyerHome> {
                     child: ChoiceChip(
                       label: Text(type, style: const TextStyle(fontSize: 13)),
                       selected: isSelected,
-                      selectedColor: Colors.green[100],
+                      selectedColor: Colors.blue[100],
                       onSelected: (_) {
                         setState(() {
                           selectedType = isSelected ? '' : type;
@@ -253,7 +392,7 @@ class _BuyerHomeState extends State<BuyerHome> {
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _selectedIndex,
           onTap: _onBottomNavTapped,
-          selectedItemColor: Colors.green,
+          selectedItemColor: Colors.blue,
           unselectedItemColor: Colors.grey,
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
@@ -272,19 +411,40 @@ class _BuyerHomeState extends State<BuyerHome> {
     );
   }
 
-  Widget _buildProductCard(Map<String, dynamic> product) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => BuyerProductView(
-              productId: product['id'],
-              userEmail: widget.userEmail,
+  Widget _buildProductImage(String? imageUrl) {
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+      child: imageUrl != null
+          ? Image.network(
+              imageUrl,
+              height: 100,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const SizedBox(
+                height: 100,
+                child: Center(child: Icon(Icons.broken_image)),
+              ),
+            )
+          : const SizedBox(
+              height: 100,
+              child: Center(child: Icon(Icons.broken_image)),
             ),
+    );
+  }
+
+  Widget _buildProductCard(Map<String, dynamic> product) {
+    final rating = product['rating'] ?? 0.0;
+
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => BuyerProductView(
+            productId: product['id'],
+            userEmail: widget.userEmail,
           ),
-        );
-      },
+        ),
+      ),
       child: Container(
         decoration: BoxDecoration(
           border: Border.all(color: Colors.grey.shade200),
@@ -301,62 +461,52 @@ class _BuyerHomeState extends State<BuyerHome> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            product['imageUrl'] != null
-                ? ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12),
-                    ),
-                    child: Image.network(
-                      product['imageUrl'],
-                      height: 100,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
-                          const Icon(Icons.broken_image, size: 80),
-                    ),
-                  )
-                : const SizedBox(
-                    height: 100,
-                    child: Center(child: Icon(Icons.broken_image)),
-                  ),
+            _buildProductImage(product['imageUrl']),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.all(8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
-                      'NEW',
-                      style: TextStyle(color: Colors.red, fontSize: 9),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'LKR ',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        Text(
+                          '${product['price']}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 1),
-                    Text(
-                      'LKR ${product['price']}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green,
-                      ),
-                    ),
-                    const SizedBox(height: 1),
+                    const SizedBox(height: 2),
                     Text(
                       product['riceType'],
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 12),
+                      style: const TextStyle(fontSize: 14),
                     ),
+                    const SizedBox(height: 2),
                     const Text(
                       "1kg",
-                      style: TextStyle(fontSize: 10, color: Colors.grey),
+                      style: TextStyle(fontSize: 11, color: Colors.grey),
                     ),
+                    const SizedBox(height: 4),
+                    _buildRatingStars(rating, size: 14),
                     const Spacer(),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: SizedBox(height: 28, width: 28),
-                    ),
                   ],
                 ),
               ),

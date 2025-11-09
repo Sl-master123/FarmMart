@@ -311,13 +311,31 @@ class _SellerOrderProcessState extends State<SellerOrderProcess> {
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text(
-                                      'Total: LKR ${order['total_cost']}',
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black87,
-                                      ),
+                                    Row(
+                                      children: [
+                                        const Text(
+                                          'Total: ',
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const Text(
+                                          'LKR ',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                        Text(
+                                          '${order['total_cost']}',
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.deepOrange,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                     Container(
                                       padding: const EdgeInsets.symmetric(

@@ -52,7 +52,7 @@ class _BuyerOrderProcessState extends State<BuyerOrderProcess> {
               // Stats Header
               Container(
                 padding: const EdgeInsets.all(16),
-                color: Colors.green.shade50,
+                color: Colors.blue.shade50,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
@@ -69,7 +69,7 @@ class _BuyerOrderProcessState extends State<BuyerOrderProcess> {
                     _buildStatCard(
                       'Delivered',
                       completedOrders.toString(),
-                      Colors.green,
+                      Colors.blue,
                     ),
                   ],
                 ),
@@ -139,12 +139,31 @@ class _BuyerOrderProcessState extends State<BuyerOrderProcess> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  'Total: LKR ${data['total_cost'].toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
+                                Row(
+                                  children: [
+                                    const Text(
+                                      'Total: ',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    const Text(
+                                      'LKR ',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                    Text(
+                                      '${data['total_cost'].toStringAsFixed(2)}',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        color: Colors.blue,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 Container(
                                   padding: const EdgeInsets.symmetric(

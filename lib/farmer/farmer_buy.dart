@@ -180,14 +180,23 @@ class _FarmerBuyPageState extends State<FarmerBuyPage> {
               children: [
                 const Text(
                   'Total Cost:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
-                Text(
-                  'LKR ${widget.totalPrice.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green,
-                  ),
+                Row(
+                  children: [
+                    const Text(
+                      'LKR ',
+                      style: TextStyle(color: Colors.grey, fontSize: 14),
+                    ),
+                    Text(
+                      '${widget.totalPrice.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                        fontSize: 22,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

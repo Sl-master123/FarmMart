@@ -340,13 +340,24 @@ class _FarmerOrderProcessState extends State<FarmerOrderProcess>
                                         ),
                                       ),
                                       const SizedBox(width: 8),
-                                      Text(
-                                        'LKR $price',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.green[700],
-                                        ),
+                                      Row(
+                                        children: [
+                                          const Text(
+                                            'LKR ',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                          Text(
+                                            '$price',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.green[700],
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
@@ -359,13 +370,31 @@ class _FarmerOrderProcessState extends State<FarmerOrderProcess>
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    'Total: LKR ${order['total_cost']}',
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black87,
-                                    ),
+                                  Row(
+                                    children: [
+                                      const Text(
+                                        'Total: ',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const Text(
+                                        'LKR ',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                      Text(
+                                        '${order['total_cost']}',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.green,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                   Container(
                                     padding: const EdgeInsets.symmetric(
@@ -667,13 +696,31 @@ class _FarmerOrderProcessState extends State<FarmerOrderProcess>
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text(
-                                      'Total: LKR ${data['total_cost'].toStringAsFixed(2)}',
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black87,
-                                      ),
+                                    Row(
+                                      children: [
+                                        const Text(
+                                          'Total: ',
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const Text(
+                                          'LKR ',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                        Text(
+                                          '${data['total_cost'].toStringAsFixed(2)}',
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.green,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                     Container(
                                       padding: const EdgeInsets.symmetric(

@@ -130,18 +130,57 @@ class _BuyerCartState extends State<BuyerCart> {
                                     ),
                                   ),
                                   const SizedBox(height: 4),
-                                  Text(
-                                    '1Kg · Price: LKR ${item['price']}',
-                                    style: const TextStyle(fontSize: 12),
+                                  Row(
+                                    children: [
+                                      const Text(
+                                        '1Kg · Price: ',
+                                        style: TextStyle(fontSize: 12),
+                                      ),
+                                      const Text(
+                                        'LKR ',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                      Text(
+                                        '${item['price']}',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.blue,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                   const SizedBox(height: 4),
-                                  Text(
-                                    'Total: LKR ${total.toStringAsFixed(2)}',
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.green,
-                                    ),
+                                  Row(
+                                    children: [
+                                      const Text(
+                                        'Total: ',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                      const Text(
+                                        'LKR ',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                      Text(
+                                        '${total.toStringAsFixed(2)}',
+                                        style: const TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.blue,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -186,19 +225,32 @@ class _BuyerCartState extends State<BuyerCart> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        'Total:',
+                        'Grand Total:',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
+                          color: Colors.black87,
                         ),
                       ),
-                      Text(
-                        'LKR ${totalPrice.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green,
-                        ),
+                      Row(
+                        children: [
+                          const Text(
+                            'LKR ',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          Text(
+                            '${totalPrice.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -218,7 +270,7 @@ class _BuyerCartState extends State<BuyerCart> {
                         );
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
+                        backgroundColor: Colors.blue,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),

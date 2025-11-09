@@ -7,6 +7,7 @@ import 'package:newadd/home/farmer_home.dart';
 import 'package:newadd/home/buyer_home.dart';
 import 'package:newadd/home/seller_home.dart';
 import 'package:newadd/login/login.dart';
+import 'package:newadd/contact.dart';
 
 class Homepage extends StatefulWidget {
   final String userUid; // from FirebaseAuth
@@ -59,10 +60,49 @@ class _HomepageState extends State<Homepage> {
           .get();
 
       if (!snap.exists) {
-        setState(() {
-          _error = 'Profile not found. Contact admin.';
-          _loading = false;
-        });
+        if (!mounted) return;
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            title: const Text('Profile Not Found'),
+            content: const Text(
+              'Your profile was not found in our system. This may happen if your account was deleted by an admin. Please contact admin for assistance.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () async {
+                  await FirebaseAuth.instance.signOut();
+                  if (!context.mounted) return;
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                    (route) => false,
+                  );
+                },
+                child: const Text('Logout'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () async {
+                  await FirebaseAuth.instance.signOut();
+                  if (!context.mounted) return;
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ContactPage(isLoggedIn: false),
+                    ),
+                    (route) => false,
+                  );
+                },
+                child: const Text('Contact Admin'),
+              ),
+            ],
+          ),
+        );
         return;
       }
 
@@ -73,10 +113,49 @@ class _HomepageState extends State<Homepage> {
       final isBlocked = data['blocked'] == true;
 
       if (isBlocked) {
-        setState(() {
-          _error = 'Your account has been blocked by the admin.';
-          _loading = false;
-        });
+        if (!mounted) return;
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            title: const Text('Account Blocked'),
+            content: const Text(
+              'Your account has been blocked by the admin. Please contact admin for more information.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () async {
+                  await FirebaseAuth.instance.signOut();
+                  if (!context.mounted) return;
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                    (route) => false,
+                  );
+                },
+                child: const Text('Logout'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () async {
+                  await FirebaseAuth.instance.signOut();
+                  if (!context.mounted) return;
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ContactPage(isLoggedIn: false),
+                    ),
+                    (route) => false,
+                  );
+                },
+                child: const Text('Contact Admin'),
+              ),
+            ],
+          ),
+        );
         return;
       }
 
@@ -104,9 +183,10 @@ class _HomepageState extends State<Homepage> {
       }
 
       if (!mounted) return;
-      Navigator.pushReplacement(
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => dest),
+        (route) => false,
       );
     } catch (e) {
       setState(() {

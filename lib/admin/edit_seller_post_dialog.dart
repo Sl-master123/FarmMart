@@ -58,17 +58,40 @@ class _EditSellerPostDialogState extends State<EditSellerPostDialog> {
   }
 
   Future<void> _saveChanges() async {
+    // Validation
+    if (_typeController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Product type cannot be empty')),
+      );
+      return;
+    }
+
+    if (_descriptionController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Description cannot be empty')),
+      );
+      return;
+    }
+
+    final price = double.tryParse(_priceController.text.trim());
+    if (price == null || price <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid price')),
+      );
+      return;
+    }
+
     try {
       await FirebaseFirestore.instance
           .collection('seller_posts')
           .doc(widget.postId)
           .update({
-            'type': _typeController.text,
-            'description': _descriptionController.text,
-            'price': double.tryParse(_priceController.text) ?? 0.0,
-            'quantity': int.tryParse(_quantityController.text) ?? 0,
-            'brand': _brandController.text,
-            'seller_email': _sellerEmailController.text,
+            'type': _typeController.text.trim(),
+            'description': _descriptionController.text.trim(),
+            'price': price,
+            'quantity': int.tryParse(_quantityController.text.trim()) ?? 0,
+            'brand': _brandController.text.trim(),
+            'seller_email': _sellerEmailController.text.trim(),
           });
 
       if (!mounted) return;
@@ -112,7 +135,7 @@ class _EditSellerPostDialogState extends State<EditSellerPostDialog> {
               controller: _priceController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
-                labelText: 'Price',
+                labelText: 'Price (LKR)',
                 border: OutlineInputBorder(),
               ),
             ),

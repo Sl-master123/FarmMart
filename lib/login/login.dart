@@ -49,9 +49,10 @@ class _LoginPageState extends State<LoginPage> {
 
       final uid = cred.user!.uid;
       if (!mounted) return;
-      Navigator.pushReplacement(
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => Homepage(userUid: uid)),
+        (route) => false,
       );
     } on FirebaseAuthException catch (e) {
       setState(() => _error = e.message ?? 'Login failed');

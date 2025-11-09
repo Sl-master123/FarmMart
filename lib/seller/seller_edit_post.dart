@@ -74,7 +74,6 @@ class _SellerEditPostState extends State<SellerEditPost> {
 
       // Upload new image if selected
       if (_selectedImage != null) {
-        print('🟡 Uploading new image...');
         String fileName = 'seller_${DateTime.now().millisecondsSinceEpoch}.jpg';
         Reference storageRef = FirebaseStorage.instance.ref().child(
           'seller_images/$fileName',
@@ -83,7 +82,6 @@ class _SellerEditPostState extends State<SellerEditPost> {
         UploadTask uploadTask = storageRef.putFile(_selectedImage!);
         TaskSnapshot snapshot = await uploadTask;
         imageUrl = await snapshot.ref.getDownloadURL();
-        print('🟢 New image uploaded.');
       }
 
       await FirebaseFirestore.instance
@@ -98,16 +96,13 @@ class _SellerEditPostState extends State<SellerEditPost> {
             'updated_at': Timestamp.now(),
           });
 
-      print('✅ Post updated successfully');
-
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Product updated successfully')),
       );
       Navigator.pop(context);
-    } catch (e, stackTrace) {
-      print('❌ Error updating post: $e');
-      print(stackTrace);
+    } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error: $e')));

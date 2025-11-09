@@ -93,9 +93,9 @@ class _SignupPageState extends State<SignupPage> {
           ),
         ),
         child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 520),
                 child: Card(
@@ -104,53 +104,52 @@ class _SignupPageState extends State<SignupPage> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+                    padding: const EdgeInsets.all(20),
                     child: Form(
                       key: _formKey,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Stack(
-                            children: [
-                              Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.only(top: 10),
-                                  child: Image.asset(
-                                    'assets/farmmart.png', // ✅ Ensure this exists
-                                    width: 200,
-                                    height: 200,
-                                    fit: BoxFit.contain,
-                                  ),
+                          // Compact logo
+                          Image.asset(
+                            'assets/farmmart.png',
+                            width: 120,
+                            height: 120,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Icon(
+                                  Icons.agriculture,
+                                  size: 80,
+                                  color: Colors.green,
                                 ),
-                              ),
-                            ],
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 8),
                           const Text(
                             'Create Account',
                             style: TextStyle(
-                              fontSize: 24,
+                              fontSize: 22,
                               fontWeight: FontWeight.w700,
                               color: Colors.green,
                             ),
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 16),
 
                           TextFormField(
                             controller: _name,
                             decoration: _inputDecoration(
                               label: 'Full Name',
-                              hint: 'Your name ',
+                              hint: 'Your name',
                               icon: Icons.person_outline,
                             ),
                             validator: (v) => (v == null || v.trim().isEmpty)
                                 ? 'Enter your name'
                                 : null,
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
 
                           TextFormField(
                             controller: _email,
+                            keyboardType: TextInputType.emailAddress,
                             decoration: _inputDecoration(
                               label: 'Email',
                               hint: 'you@example.com',
@@ -160,7 +159,7 @@ class _SignupPageState extends State<SignupPage> {
                                 ? 'Enter a valid email'
                                 : null,
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
 
                           DropdownButtonFormField<String>(
                             value: _role,
@@ -182,28 +181,25 @@ class _SignupPageState extends State<SignupPage> {
                                 value: 'Seller',
                                 child: Text('Seller'),
                               ),
-                              // DropdownMenuItem(
-                              //   value: 'Admin',
-                              //   child: Text('Admin'),
-                              // ),
                             ],
                             onChanged: (v) =>
                                 setState(() => _role = v ?? 'Farmer'),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
 
                           TextFormField(
                             controller: _password,
                             obscureText: _obscure1,
                             decoration: _inputDecoration(
                               label: 'Password',
-                              hint: 'At least 6 chars',
+                              hint: 'Min 6 characters',
                               icon: Icons.lock_outline,
                               suffix: IconButton(
                                 icon: Icon(
                                   _obscure1
                                       ? Icons.visibility
                                       : Icons.visibility_off,
+                                  size: 20,
                                 ),
                                 onPressed: () =>
                                     setState(() => _obscure1 = !_obscure1),
@@ -213,7 +209,7 @@ class _SignupPageState extends State<SignupPage> {
                                 ? 'Use at least 6 characters'
                                 : null,
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
 
                           TextFormField(
                             controller: _confirm,
@@ -227,6 +223,7 @@ class _SignupPageState extends State<SignupPage> {
                                   _obscure2
                                       ? Icons.visibility
                                       : Icons.visibility_off,
+                                  size: 20,
                                 ),
                                 onPressed: () =>
                                     setState(() => _obscure2 = !_obscure2),
@@ -238,17 +235,21 @@ class _SignupPageState extends State<SignupPage> {
                           ),
 
                           if (_error != null) ...[
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 6),
                             Text(
                               _error!,
-                              style: const TextStyle(color: Colors.red),
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontSize: 13,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
                           ],
 
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 14),
                           SizedBox(
                             width: double.infinity,
-                            height: 48,
+                            height: 46,
                             child: ElevatedButton(
                               onPressed: _loading ? null : _signup,
                               style: ElevatedButton.styleFrom(
@@ -259,17 +260,28 @@ class _SignupPageState extends State<SignupPage> {
                                 ),
                               ),
                               child: _loading
-                                  ? const CircularProgressIndicator(
-                                      strokeWidth: 2,
+                                  ? const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
                                     )
-                                  : const Text('Create Account'),
+                                  : const Text(
+                                      'Create Account',
+                                      style: TextStyle(fontSize: 16),
+                                    ),
                             ),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 8),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Text('Already have an account? '),
+                              const Text(
+                                'Already have an account? ',
+                                style: TextStyle(fontSize: 14),
+                              ),
                               TextButton(
                                 onPressed: () {
                                   Navigator.pushReplacement(
@@ -279,7 +291,16 @@ class _SignupPageState extends State<SignupPage> {
                                     ),
                                   );
                                 },
-                                child: const Text('Log in'),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Log in',
+                                  style: TextStyle(fontSize: 14),
+                                ),
                               ),
                             ],
                           ),
@@ -305,12 +326,22 @@ class _SignupPageState extends State<SignupPage> {
     return InputDecoration(
       labelText: label,
       hintText: hint,
-      prefixIcon: Icon(icon, color: Colors.green),
+      labelStyle: const TextStyle(fontSize: 14),
+      hintStyle: const TextStyle(fontSize: 13),
+      prefixIcon: Icon(icon, color: Colors.green, size: 20),
       suffixIcon: suffix,
       filled: true,
       fillColor: Colors.green[50],
-      contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.green.shade200),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.green, width: 2),
+      ),
     );
   }
 }

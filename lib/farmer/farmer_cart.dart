@@ -124,9 +124,38 @@ class _FarmerCartState extends State<FarmerCart> {
                                     ),
                                   ),
                                   const SizedBox(height: 4),
-                                  Text('LKR ${item['price']} / Unit'),
-                                  Text(
-                                    'Total: LKR ${total.toStringAsFixed(2)}',
+                                  Row(
+                                    children: [
+                                      const Text(
+                                        'LKR ',
+                                        style: TextStyle(color: Colors.grey),
+                                      ),
+                                      Text(
+                                        '${item['price']}',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.green,
+                                        ),
+                                      ),
+                                      const Text(' / Unit'),
+                                    ],
+                                  ),
+                                  Row(
+                                    children: [
+                                      const Text('Total: '),
+                                      const Text(
+                                        'LKR ',
+                                        style: TextStyle(color: Colors.grey),
+                                      ),
+                                      Text(
+                                        '${total.toStringAsFixed(2)}',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 15,
+                                          color: Colors.green,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -168,15 +197,27 @@ class _FarmerCartState extends State<FarmerCart> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        'Total:',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        'LKR ${totalPrice.toStringAsFixed(2)}',
-                        style: const TextStyle(
+                        'Grand Total:',
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: Colors.green,
+                          fontSize: 16,
                         ),
+                      ),
+                      Row(
+                        children: [
+                          const Text(
+                            'LKR ',
+                            style: TextStyle(color: Colors.grey, fontSize: 14),
+                          ),
+                          Text(
+                            '${totalPrice.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                              fontSize: 22,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

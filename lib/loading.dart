@@ -10,26 +10,40 @@ class LoadingPage extends StatefulWidget {
 }
 
 class _LoadingPageState extends State<LoadingPage> {
+  Timer? _timer;
+
   @override
   void initState() {
     super.initState();
     // Wait for 3 seconds, then navigate to splash page
-    Timer(const Duration(seconds: 3), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const SplashPage()),
-      );
+    _timer = Timer(const Duration(seconds: 3), () {
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const SplashPage()),
+        );
+      }
     });
   }
 
   @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset('assets/logo.png', width: 10),
-          const Center(
+          Image(
+            image: AssetImage('assets/logo.png'),
+            width: 10,
+            fit: BoxFit.contain,
+          ),
+          Center(
             child: CircularProgressIndicator(
               color: Colors.green,
               strokeWidth: 4,

@@ -20,28 +20,46 @@ class FarmerEditPost extends StatefulWidget {
 
 class _FarmerEditPostState extends State<FarmerEditPost> {
   final _formKey = GlobalKey<FormState>();
-  final _typeController = TextEditingController();
   final _priceController = TextEditingController();
   final _descriptionController = TextEditingController();
 
   String? _imageUrl;
   File? _imageFile;
-  String _condition = 'Brand New';
+  String? _selectedCategory;
+  String? _selectedRiceType;
+  String _productType = 'paddy';
   bool _isLoading = false;
+
+  final Map<String, List<String>> _riceTypes = {
+    'Traditional': [
+      'Suwandel',
+      'Kalu Heenati',
+      'Maa-Wee',
+      'Rathu El',
+      'Pachchaperumal',
+    ],
+    'Improved': ['Samba', 'Kekulu', 'Nadu', 'Mottai Karuppan'],
+    'Specialty & Hybrid': [
+      'Basmati',
+      'Red Rice (Rathu Kakulu)',
+      'White Rice (Sudu Kakulu)',
+      'Parboiled Rice (Sudu & Rathu Kekulu)',
+    ],
+  };
 
   @override
   void initState() {
     super.initState();
-    _typeController.text = widget.postData['type'] ?? '';
     _priceController.text = widget.postData['price']?.toString() ?? '';
     _descriptionController.text = widget.postData['description'] ?? '';
-    _condition = widget.postData['condition'] ?? 'Brand New';
+    _productType = widget.postData['product_type'] ?? 'paddy';
+    _selectedCategory = widget.postData['category'];
+    _selectedRiceType = widget.postData['rice_type'];
     _imageUrl = widget.postData['image_url'];
   }
 
   @override
   void dispose() {
-    _typeController.dispose();
     _priceController.dispose();
     _descriptionController.dispose();
     super.dispose();
@@ -80,6 +98,13 @@ class _FarmerEditPostState extends State<FarmerEditPost> {
   Future<void> _updatePost() async {
     if (!_formKey.currentState!.validate()) return;
 
+    if (_selectedRiceType == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a rice type')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
@@ -89,10 +114,11 @@ class _FarmerEditPostState extends State<FarmerEditPost> {
           .collection('farmer_posts')
           .doc(widget.postId)
           .update({
-            'type': _typeController.text.trim(),
+            'category': _selectedCategory,
+            'rice_type': _selectedRiceType,
             'price': double.parse(_priceController.text.trim()),
+            'product_type': _productType,
             'description': _descriptionController.text.trim(),
-            'condition': _condition,
             if (uploadedImageUrl != null) 'image_url': uploadedImageUrl,
             'updated_at': Timestamp.now(),
           });
@@ -163,14 +189,68 @@ class _FarmerEditPostState extends State<FarmerEditPost> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _typeController,
+                    DropdownButtonFormField<String>(
+                      value: _productType,
                       decoration: const InputDecoration(
                         labelText: 'Product Type',
                         border: OutlineInputBorder(),
                       ),
+                      items: const [
+                        DropdownMenuItem(value: 'paddy', child: Text('Paddy')),
+                        DropdownMenuItem(value: 'rice', child: Text('Rice')),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() => _productType = value);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: _selectedCategory,
+                      decoration: const InputDecoration(
+                        labelText: 'Category',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: _riceTypes.keys
+                          .map(
+                            (category) => DropdownMenuItem(
+                              value: category,
+                              child: Text(category),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCategory = value;
+                          _selectedRiceType = null;
+                        });
+                      },
                       validator: (value) =>
-                          value?.isEmpty ?? true ? 'Required' : null,
+                          value == null ? 'Please select a category' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: _selectedRiceType,
+                      decoration: const InputDecoration(
+                        labelText: 'Rice Type',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: _selectedCategory != null
+                          ? _riceTypes[_selectedCategory]!
+                                .map(
+                                  (riceType) => DropdownMenuItem(
+                                    value: riceType,
+                                    child: Text(riceType),
+                                  ),
+                                )
+                                .toList()
+                          : [],
+                      onChanged: (value) {
+                        setState(() => _selectedRiceType = value);
+                      },
+                      validator: (value) =>
+                          value == null ? 'Please select a rice type' : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -182,24 +262,6 @@ class _FarmerEditPostState extends State<FarmerEditPost> {
                       ),
                       validator: (value) =>
                           value?.isEmpty ?? true ? 'Required' : null,
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      value: _condition,
-                      decoration: const InputDecoration(
-                        labelText: 'Condition',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: ['Brand New', 'Used']
-                          .map(
-                            (c) => DropdownMenuItem(value: c, child: Text(c)),
-                          )
-                          .toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() => _condition = value);
-                        }
-                      },
                     ),
                     const SizedBox(height: 16),
                     TextFormField(

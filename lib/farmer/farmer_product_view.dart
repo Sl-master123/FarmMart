@@ -21,12 +21,30 @@ class _FarmerProductViewState extends State<FarmerProductView> {
   bool isLoading = true;
   double averageRating = 0.0;
   List<Map<String, dynamic>> reviews = [];
+  String? _cachedUserName;
 
   @override
   void initState() {
     super.initState();
     _loadProduct();
     _loadReviews();
+    _cacheUserData();
+  }
+
+  Future<void> _cacheUserData() async {
+    try {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: widget.userEmail)
+          .limit(1)
+          .get();
+
+      if (userDoc.docs.isNotEmpty) {
+        _cachedUserName = userDoc.docs.first.data()['name'] ?? 'Unknown User';
+      }
+    } catch (e) {
+      _cachedUserName = 'User';
+    }
   }
 
   Future<void> _loadProduct() async {
@@ -77,48 +95,253 @@ class _FarmerProductViewState extends State<FarmerProductView> {
     double rating = 5;
     final controller = TextEditingController();
 
-    await showDialog(
+    // Use cached user name or fetch if not available
+    final userName = _cachedUserName ?? 'User';
+
+    showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Review'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: controller,
-              decoration: const InputDecoration(labelText: 'Your review'),
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setStateDialog) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.rate_review,
+                  color: Colors.green.shade700,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Write a Review',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Your Rating',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                  ),
+                  const SizedBox(height: 8),
+                  Center(
+                    child: Wrap(
+                      spacing: 4,
+                      children: List.generate(5, (index) {
+                        return IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          icon: Icon(
+                            index < rating ? Icons.star : Icons.star_border,
+                            size: 36,
+                            color: Colors.amber,
+                          ),
+                          onPressed: () {
+                            setStateDialog(() {
+                              rating = (index + 1).toDouble();
+                            });
+                          },
+                        );
+                      }),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Your Review',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: controller,
+                    decoration: InputDecoration(
+                      hintText: 'Share your experience...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                      contentPadding: const EdgeInsets.all(12),
+                    ),
+                    maxLines: 3,
+                    maxLength: 300,
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 12),
-            DropdownButton<double>(
-              value: rating,
-              items: List.generate(5, (i) => (i + 1).toDouble())
-                  .map(
-                    (val) => DropdownMenuItem(value: val, child: Text('$val')),
-                  )
-                  .toList(),
-              onChanged: (val) => setState(() => rating = val ?? 5),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
+              child: const Text('Cancel', style: TextStyle(fontSize: 16)),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (controller.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Row(
+                        children: [
+                          Icon(Icons.warning_amber, color: Colors.white),
+                          SizedBox(width: 8),
+                          Text('Please write a review'),
+                        ],
+                      ),
+                      backgroundColor: Colors.orange,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  );
+                  return;
+                }
+                if (controller.text.trim().length < 5) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Row(
+                        children: [
+                          Icon(Icons.warning_amber, color: Colors.white),
+                          SizedBox(width: 8),
+                          Text('Review must be at least 5 characters'),
+                        ],
+                      ),
+                      backgroundColor: Colors.orange,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  );
+                  return;
+                }
+
+                // Close dialog immediately and submit in background
+                Navigator.pop(context);
+
+                // Show inline progress indicator
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Row(
+                      children: [
+                        SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Text('Submitting review...'),
+                      ],
+                    ),
+                    backgroundColor: Colors.green,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+
+                // Submit review asynchronously
+                try {
+                  await FirebaseFirestore.instance.collection('feedback').add({
+                    'product_id': widget.productId,
+                    'review': controller.text.trim(),
+                    'rating': rating,
+                    'timestamp': Timestamp.now(),
+                    'user_email': widget.userEmail,
+                    'user_name': userName,
+                  });
+
+                  if (mounted) {
+                    _loadReviews();
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Row(
+                          children: [
+                            Icon(Icons.check_circle, color: Colors.white),
+                            SizedBox(width: 8),
+                            Text('Review submitted successfully!'),
+                          ],
+                        ),
+                        backgroundColor: Colors.green,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        duration: const Duration(seconds: 3),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Row(
+                          children: [
+                            const Icon(
+                              Icons.error_outline,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(child: Text('Error: $e')),
+                          ],
+                        ),
+                        backgroundColor: Colors.red,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text(
+                'Submit',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              await FirebaseFirestore.instance.collection('feedback').add({
-                'product_id': widget.productId,
-                'review': controller.text,
-                'rating': rating,
-                'timestamp': Timestamp.now(),
-              });
-              _loadReviews();
-              Navigator.pop(context);
-            },
-            child: const Text('Submit'),
-          ),
-        ],
       ),
     );
   }
@@ -287,13 +510,39 @@ class _FarmerProductViewState extends State<FarmerProductView> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Text(
-                          'LKR ${productData!['price']}',
-                          style: const TextStyle(
-                            color: Colors.green,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Text(
+                                    'LKR ',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${productData!['price']}',
+                                    style: const TextStyle(
+                                      color: Colors.green,
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 8),
                         Row(
@@ -371,6 +620,9 @@ class _FarmerProductViewState extends State<FarmerProductView> {
                                   final rating = (review['rating'] ?? 0)
                                       .toDouble();
                                   final reviewText = review['review'] ?? '';
+                                  final userName =
+                                      review['user_name'] ?? 'Anonymous';
+                                  final userEmail = review['user_email'] ?? '';
 
                                   return Card(
                                     margin: const EdgeInsets.only(bottom: 12),
@@ -380,6 +632,47 @@ class _FarmerProductViewState extends State<FarmerProductView> {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
+                                          Row(
+                                            children: [
+                                              CircleAvatar(
+                                                radius: 16,
+                                                backgroundColor: Colors.green,
+                                                child: Text(
+                                                  userName[0].toUpperCase(),
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      userName,
+                                                      style: const TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 14,
+                                                      ),
+                                                    ),
+                                                    if (userEmail.isNotEmpty)
+                                                      Text(
+                                                        userEmail,
+                                                        style: const TextStyle(
+                                                          fontSize: 11,
+                                                          color: Colors.grey,
+                                                        ),
+                                                      ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 8),
                                           Row(
                                             children: [
                                               ...List.generate(5, (i) {

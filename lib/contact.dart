@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:newadd/login/login.dart';
 
 class ContactPage extends StatelessWidget {
-  const ContactPage({super.key});
+  final bool isLoggedIn;
+
+  const ContactPage({super.key, this.isLoggedIn = true});
 
   // --- Launch helpers ---
   Future<void> _launchPhone(String number) async {
@@ -55,156 +58,190 @@ class ContactPage extends StatelessWidget {
     const brandGreenLight = Color(0xFF66BB6A);
     const leaf1 = Color(0xFFE8F5E9);
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: const Text('Contact Support'),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.white,
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: isDark
-                ? [brandGreen.withOpacity(0.85), Colors.black]
-                : [brandGreenLight.withOpacity(0.85), leaf1],
+    return WillPopScope(
+      onWillPop: () async {
+        // If user is not logged in (deleted/blocked), go to login page
+        // Otherwise, just go back normally
+        if (!isLoggedIn) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const LoginPage()),
+            (route) => false,
+          );
+          return false;
+        }
+        return true; // Allow normal back navigation for logged-in users
+      },
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        appBar: AppBar(
+          title: const Text('Contact Support'),
+          centerTitle: true,
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              if (!isLoggedIn) {
+                // Deleted/blocked users go to login
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                  (route) => false,
+                );
+              } else {
+                // Logged-in users go back normally
+                Navigator.pop(context);
+              }
+            },
           ),
         ),
-        child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-            children: [
-              // Header Card
-              _GlassCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        _CircleLeafIcon(
-                          icon: Icons.agriculture_rounded,
-                          bg: Colors.white.withOpacity(0.25),
-                        ),
-                        const SizedBox(width: 12),
-                        const Expanded(
-                          child: Text(
-                            'We’re here to help 🌿',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: isDark
+                  ? [brandGreen.withOpacity(0.85), Colors.black]
+                  : [brandGreenLight.withOpacity(0.85), leaf1],
+            ),
+          ),
+          child: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+              children: [
+                // Header Card
+                _GlassCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          _CircleLeafIcon(
+                            icon: Icons.agriculture_rounded,
+                            bg: Colors.white.withOpacity(0.25),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Text(
+                              'We’re here to help 🌿',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Reach us via phone or email, or find us at Rajarata University of Sri Lanka, Mihintale.',
-                      style: TextStyle(color: Colors.white, height: 1.35),
-                    ),
-                  ],
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Reach us via phone or email, or find us at Rajarata University of Sri Lanka, Mihintale.',
+                        style: TextStyle(color: Colors.white, height: 1.35),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-              // Phones
-              _SectionTitle(title: 'Phone Numbers'),
-              _InfoCard(
-                icon: Icons.phone_rounded,
-                title: '077 189 907',
-                subtitle: 'Tap to call • Long press to copy',
-                onTap: () => _launchPhone('077 189 907'),
-                onLongPress: (ctx) =>
-                    _copyToClipboard(ctx, '077189907', 'Phone number'),
-                trailing: _ActionIconButton(
-                  tooltip: 'Call',
-                  icon: Icons.call_rounded,
-                  onPressed: () => _launchPhone('077189907'),
+                // Phones
+                _SectionTitle(title: 'Phone Numbers'),
+                _InfoCard(
+                  icon: Icons.phone_rounded,
+                  title: '077 189 907',
+                  subtitle: 'Tap to call • Long press to copy',
+                  onTap: () => _launchPhone('077 189 907'),
+                  onLongPress: (ctx) =>
+                      _copyToClipboard(ctx, '077189907', 'Phone number'),
+                  trailing: _ActionIconButton(
+                    tooltip: 'Call',
+                    icon: Icons.call_rounded,
+                    onPressed: () => _launchPhone('077189907'),
+                  ),
                 ),
-              ),
-              _InfoCard(
-                icon: Icons.phone_rounded,
-                title: '076 000 439',
-                subtitle: 'Tap to call • Long press to copy',
-                onTap: () => _launchPhone('076 000 439'),
-                onLongPress: (ctx) =>
-                    _copyToClipboard(ctx, '076000439', 'Phone number'),
-                trailing: _ActionIconButton(
-                  tooltip: 'Call',
-                  icon: Icons.call_rounded,
-                  onPressed: () => _launchPhone('076000439'),
+                _InfoCard(
+                  icon: Icons.phone_rounded,
+                  title: '076 000 439',
+                  subtitle: 'Tap to call • Long press to copy',
+                  onTap: () => _launchPhone('076 000 439'),
+                  onLongPress: (ctx) =>
+                      _copyToClipboard(ctx, '076000439', 'Phone number'),
+                  trailing: _ActionIconButton(
+                    tooltip: 'Call',
+                    icon: Icons.call_rounded,
+                    onPressed: () => _launchPhone('076000439'),
+                  ),
                 ),
-              ),
 
-              const SizedBox(height: 12),
+                const SizedBox(height: 12),
 
-              // Emails
-              _SectionTitle(title: 'Email Addresses'),
-              _InfoCard(
-                icon: Icons.email_rounded,
-                title: 'vikumkalhara16@gmail.com',
-                subtitle: 'Tap to email • Long press to copy',
-                onTap: () => _launchEmail('vikumkalhara16@gmail.com'),
-                onLongPress: (ctx) =>
-                    _copyToClipboard(ctx, 'vikumkalhara16@gmail.com', 'Email'),
-                trailing: _ActionIconButton(
-                  tooltip: 'Email',
-                  icon: Icons.send_rounded,
-                  onPressed: () => _launchEmail('vikumkalhara16@gmail.com'),
+                // Emails
+                _SectionTitle(title: 'Email Addresses'),
+                _InfoCard(
+                  icon: Icons.email_rounded,
+                  title: 'vikumkalhara16@gmail.com',
+                  subtitle: 'Tap to email • Long press to copy',
+                  onTap: () => _launchEmail('vikumkalhara16@gmail.com'),
+                  onLongPress: (ctx) => _copyToClipboard(
+                    ctx,
+                    'vikumkalhara16@gmail.com',
+                    'Email',
+                  ),
+                  trailing: _ActionIconButton(
+                    tooltip: 'Email',
+                    icon: Icons.send_rounded,
+                    onPressed: () => _launchEmail('vikumkalhara16@gmail.com'),
+                  ),
                 ),
-              ),
-              _InfoCard(
-                icon: Icons.email_rounded,
-                title: 'mnawarathne60@gmail.com',
-                subtitle: 'Tap to email • Long press to copy',
-                onTap: () => _launchEmail('mnawarathne60@gmail.com'),
-                onLongPress: (ctx) =>
-                    _copyToClipboard(ctx, 'mnawarathne60@gmail.com', 'Email'),
-                trailing: _ActionIconButton(
-                  tooltip: 'Email',
-                  icon: Icons.send_rounded,
-                  onPressed: () => _launchEmail('mnawarathne60@gmail.com'),
+                _InfoCard(
+                  icon: Icons.email_rounded,
+                  title: 'mnawarathne60@gmail.com',
+                  subtitle: 'Tap to email • Long press to copy',
+                  onTap: () => _launchEmail('mnawarathne60@gmail.com'),
+                  onLongPress: (ctx) =>
+                      _copyToClipboard(ctx, 'mnawarathne60@gmail.com', 'Email'),
+                  trailing: _ActionIconButton(
+                    tooltip: 'Email',
+                    icon: Icons.send_rounded,
+                    onPressed: () => _launchEmail('mnawarathne60@gmail.com'),
+                  ),
                 ),
-              ),
 
-              const SizedBox(height: 12),
+                const SizedBox(height: 12),
 
-              // Location
-              _SectionTitle(title: 'Location'),
-              _InfoCard(
-                icon: Icons.location_on_rounded,
-                title: 'Rajarata University of Sri Lanka, Mihintale',
-                subtitle: 'Tap to open in Google Maps',
-                onTap: _launchMap,
-                trailing: _ActionIconButton(
-                  tooltip: 'Open Map',
-                  icon: Icons.map_rounded,
-                  onPressed: _launchMap,
+                // Location
+                _SectionTitle(title: 'Location'),
+                _InfoCard(
+                  icon: Icons.location_on_rounded,
+                  title: 'Rajarata University of Sri Lanka, Mihintale',
+                  subtitle: 'Tap to open in Google Maps',
+                  onTap: _launchMap,
+                  trailing: _ActionIconButton(
+                    tooltip: 'Open Map',
+                    icon: Icons.map_rounded,
+                    onPressed: _launchMap,
+                  ),
                 ),
-              ),
 
-              const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-              // Footer
-              Center(
-                child: Opacity(
-                  opacity: 0.85,
-                  child: Text(
-                    'FarmMart • Growing together',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: isDark ? Colors.white70 : Colors.green.shade900,
-                      fontWeight: FontWeight.w600,
+                // Footer
+                Center(
+                  child: Opacity(
+                    opacity: 0.85,
+                    child: Text(
+                      'FarmMart • Growing together',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: isDark ? Colors.white70 : Colors.green.shade900,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

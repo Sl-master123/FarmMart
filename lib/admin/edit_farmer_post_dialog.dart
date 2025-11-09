@@ -58,17 +58,40 @@ class _EditFarmerPostDialogState extends State<EditFarmerPostDialog> {
   }
 
   Future<void> _saveChanges() async {
+    // Validation
+    if (_riceTypeController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Rice type cannot be empty')),
+      );
+      return;
+    }
+
+    if (_descriptionController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Description cannot be empty')),
+      );
+      return;
+    }
+
+    final price = double.tryParse(_priceController.text.trim());
+    if (price == null || price <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid price')),
+      );
+      return;
+    }
+
     try {
       await FirebaseFirestore.instance
           .collection('farmer_posts')
           .doc(widget.postId)
           .update({
-            'rice_type': _riceTypeController.text,
-            'description': _descriptionController.text,
-            'price': double.tryParse(_priceController.text) ?? 0.0,
-            'quantity': int.tryParse(_quantityController.text) ?? 0,
-            'location': _locationController.text,
-            'farmer_email': _farmerEmailController.text,
+            'rice_type': _riceTypeController.text.trim(),
+            'description': _descriptionController.text.trim(),
+            'price': price,
+            'quantity': int.tryParse(_quantityController.text.trim()) ?? 0,
+            'location': _locationController.text.trim(),
+            'farmer_email': _farmerEmailController.text.trim(),
           });
 
       if (!mounted) return;
@@ -112,7 +135,7 @@ class _EditFarmerPostDialogState extends State<EditFarmerPostDialog> {
               controller: _priceController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
-                labelText: 'Price',
+                labelText: 'Price (LKR)',
                 border: OutlineInputBorder(),
               ),
             ),

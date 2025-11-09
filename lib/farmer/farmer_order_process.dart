@@ -14,6 +14,7 @@ class _FarmerOrderProcessState extends State<FarmerOrderProcess>
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   List<Map<String, dynamic>> _ordersFromBuyers = [];
   TabController? _tabController;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -23,6 +24,8 @@ class _FarmerOrderProcessState extends State<FarmerOrderProcess>
   }
 
   Future<void> _fetchOrdersFromBuyers() async {
+    setState(() => _isLoading = true);
+
     try {
       final snapshot = await _firestore.collection('cart_buy').get();
 
@@ -54,11 +57,28 @@ class _FarmerOrderProcessState extends State<FarmerOrderProcess>
         }
       }
 
-      setState(() => _ordersFromBuyers = filteredOrders);
+      setState(() {
+        _ordersFromBuyers = filteredOrders;
+        _isLoading = false;
+      });
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error loading buyer orders: $e')));
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.error_outline, color: Colors.white),
+              SizedBox(width: 8),
+              Expanded(child: Text('Error loading buyer orders: $e')),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
     }
   }
 
@@ -69,19 +89,48 @@ class _FarmerOrderProcessState extends State<FarmerOrderProcess>
       });
       _fetchOrdersFromBuyers();
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error updating order: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.error_outline, color: Colors.white),
+              SizedBox(width: 8),
+              Expanded(child: Text('Error updating order: $e')),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
     }
   }
 
-  // Helper function to get appropriate unit for product type
-  String _getProductUnit(String productType) {
-    final type = productType.toLowerCase();
-    if (type.contains('vehicle') || type.contains('equipment')) {
-      return '1 unit';
-    }
-    return '1kg';
+  Widget _buildInfoRow(IconData icon, String label, String value, Color color) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: color),
+        const SizedBox(width: 8),
+        Text(
+          '$label: ',
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildBuyerOrderTab() {
@@ -183,7 +232,18 @@ class _FarmerOrderProcessState extends State<FarmerOrderProcess>
 
         // Orders List
         Expanded(
-          child: _ordersFromBuyers.isEmpty
+          child: _isLoading
+              ? const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(color: Colors.green),
+                      SizedBox(height: 16),
+                      Text('Loading orders...'),
+                    ],
+                  ),
+                )
+              : _ordersFromBuyers.isEmpty
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -230,134 +290,162 @@ class _FarmerOrderProcessState extends State<FarmerOrderProcess>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Order ID and Date
+                              // Order ID, Date and Status
                               Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Expanded(
-                                    child: Text(
-                                      'Order ID: ${order['id']}',
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black87,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Order #${order['id'].toString().substring(0, 8)}',
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          formattedDate,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  Text(
-                                    formattedDate,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey[600],
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isCompleted
+                                          ? Colors.green
+                                          : Colors.orange,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      isCompleted ? 'Delivered' : 'Processing',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
+                              const Divider(height: 24),
+
+                              // Order Placed By (Buyer)
+                              _buildInfoRow(
+                                Icons.person,
+                                'Order Placed By',
+                                order['user_email'].split('@')[0],
+                                Colors.blue,
+                              ),
                               const SizedBox(height: 8),
 
-                              // Buyer Name
-                              Text(
-                                'Buyer: ${order['user_email'].split('@')[0]}',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey[700],
-                                ),
+                              // Delivery Address
+                              _buildInfoRow(
+                                Icons.location_on,
+                                'Delivery Address',
+                                order['address'] ?? 'N/A',
+                                Colors.red,
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 8),
+
+                              // Delivery Method
+                              _buildInfoRow(
+                                Icons.local_shipping,
+                                'Delivery Method',
+                                order['delivery_method'] ?? 'N/A',
+                                Colors.green,
+                              ),
+                              const SizedBox(height: 8),
+
+                              // Payment Method
+                              _buildInfoRow(
+                                Icons.payment,
+                                'Payment Method',
+                                order['payment_method'] ?? 'N/A',
+                                Colors.purple,
+                              ),
+                              const SizedBox(height: 8),
+
+                              // Mobile Number
+                              _buildInfoRow(
+                                Icons.phone,
+                                'Mobile',
+                                order['phone'] ?? 'N/A',
+                                Colors.orange,
+                              ),
+                              const SizedBox(height: 8),
 
                               // Email
-                              Text(
-                                'Email: ${order['email'] ?? order['user_email']}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                ),
-                                overflow: TextOverflow.ellipsis,
+                              _buildInfoRow(
+                                Icons.email,
+                                'Email',
+                                order['email'] ?? order['user_email'] ?? 'N/A',
+                                Colors.teal,
                               ),
-                              const SizedBox(height: 4),
-
-                              // Phone
-                              Text(
-                                'Phone: ${order['phone']}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-
-                              // Address
-                              Text(
-                                'Address: ${order['address']}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 8),
+                              const Divider(height: 24),
 
                               // Items List
                               const Text(
-                                'Items:',
+                                'Items Ordered:',
                                 style: TextStyle(
+                                  fontWeight: FontWeight.bold,
                                   fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
                                 ),
                               ),
-                              const SizedBox(height: 6),
+                              const SizedBox(height: 8),
                               ...items.map<Widget>((item) {
                                 final productType =
                                     item['type'] ??
                                     item['rice_type'] ??
                                     'Product';
-                                final unit = _getProductUnit(productType);
                                 final price = item['price'] ?? 0;
+                                final quantity = item['quantity'] ?? 1;
 
                                 return Padding(
-                                  padding: const EdgeInsets.only(bottom: 4),
+                                  padding: const EdgeInsets.only(bottom: 6),
                                   child: Row(
                                     children: [
-                                      Text(
-                                        '• ',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: Colors.grey[600],
-                                        ),
-                                      ),
-                                      Expanded(
-                                        child: Text(
-                                          '$productType ($unit)',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey[700],
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
+                                      Container(
+                                        width: 4,
+                                        height: 4,
+                                        decoration: const BoxDecoration(
+                                          color: Colors.green,
+                                          shape: BoxShape.circle,
                                         ),
                                       ),
                                       const SizedBox(width: 8),
-                                      Row(
-                                        children: [
-                                          const Text(
-                                            'LKR ',
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                          Text(
-                                            '$price',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.green[700],
-                                            ),
-                                          ),
-                                        ],
+                                      Expanded(
+                                        child: Text(
+                                          '$productType (Qty: $quantity)',
+                                          style: const TextStyle(fontSize: 12),
+                                        ),
+                                      ),
+                                      const Text(
+                                        'LKR ',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                      Text(
+                                        '$price',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.green[700],
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -365,58 +453,45 @@ class _FarmerOrderProcessState extends State<FarmerOrderProcess>
                               }),
                               const SizedBox(height: 12),
 
-                              // Total and Status
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    children: [
-                                      const Text(
-                                        'Total: ',
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const Text(
-                                        'LKR ',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                      Text(
-                                        '${order['total_cost']}',
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.green,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: isCompleted
-                                          ? Colors.green
-                                          : Colors.orange,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      isCompleted ? 'Delivered' : 'Processing',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
+                              // Total Cost
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.shade50,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text(
+                                      'Total Cost:',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
                                       ),
                                     ),
-                                  ),
-                                ],
+                                    Row(
+                                      children: [
+                                        const Text(
+                                          'LKR ',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                        Text(
+                                          '${order['total_cost']}',
+                                          style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.green,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
 
                               // Mark as Delivered Button
@@ -424,9 +499,11 @@ class _FarmerOrderProcessState extends State<FarmerOrderProcess>
                                 const SizedBox(height: 12),
                                 SizedBox(
                                   width: double.infinity,
-                                  child: ElevatedButton(
+                                  child: ElevatedButton.icon(
                                     onPressed: () =>
                                         _markAsDelivered(order['id']),
+                                    icon: const Icon(Icons.check_circle),
+                                    label: const Text('Mark as Delivered'),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.green,
                                       foregroundColor: Colors.white,
@@ -435,13 +512,6 @@ class _FarmerOrderProcessState extends State<FarmerOrderProcess>
                                       ),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(8),
-                                      ),
-                                    ),
-                                    child: const Text(
-                                      'Mark as Delivered',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                   ),
@@ -621,117 +691,44 @@ class _FarmerOrderProcessState extends State<FarmerOrderProcess>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Order ID and Date
+                                // Order ID, Date and Status
                                 Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
                                     Expanded(
-                                      child: Text(
-                                        'Order ID: ${order.id}',
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.black87,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Order #${order.id.substring(0, 8)}',
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            formattedDate,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                    Text(
-                                      formattedDate,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-
-                                // Seller Name
-                                Text(
-                                  'Seller: ${data['seller_email']?.split('@')[0] ?? 'N/A'}',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.grey[700],
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-
-                                // Email
-                                Text(
-                                  'Email: ${data['seller_email'] ?? data['email'] ?? 'N/A'}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[600],
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 4),
-
-                                // Delivery Address
-                                Text(
-                                  'Delivery: ${data['address'] ?? 'N/A'}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[600],
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 8),
-
-                                // Items Count
-                                Text(
-                                  'Items: ${items.length}',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-
-                                // Total and Status
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        const Text(
-                                          'Total: ',
-                                          style: TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        const Text(
-                                          'LKR ',
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                        Text(
-                                          '${data['total_cost'].toStringAsFixed(2)}',
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.green,
-                                          ),
-                                        ),
-                                      ],
                                     ),
                                     Container(
                                       padding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
+                                        horizontal: 12,
                                         vertical: 6,
                                       ),
                                       decoration: BoxDecoration(
                                         color: isCompleted
                                             ? Colors.green
                                             : Colors.orange,
-                                        borderRadius: BorderRadius.circular(4),
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Text(
                                         isCompleted
@@ -739,12 +736,151 @@ class _FarmerOrderProcessState extends State<FarmerOrderProcess>
                                             : 'Processing',
                                         style: const TextStyle(
                                           color: Colors.white,
-                                          fontSize: 12,
+                                          fontSize: 11,
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
                                     ),
                                   ],
+                                ),
+                                const Divider(height: 24),
+
+                                // Order From (Seller)
+                                _buildInfoRow(
+                                  Icons.store,
+                                  'Order From',
+                                  data['seller_email']?.split('@')[0] ??
+                                      'Seller',
+                                  Colors.deepOrange,
+                                ),
+                                const SizedBox(height: 8),
+
+                                // Delivery Address
+                                _buildInfoRow(
+                                  Icons.location_on,
+                                  'Delivery Address',
+                                  data['address'] ?? 'N/A',
+                                  Colors.red,
+                                ),
+                                const SizedBox(height: 8),
+
+                                // Delivery Method
+                                _buildInfoRow(
+                                  Icons.local_shipping,
+                                  'Delivery Method',
+                                  data['delivery_method'] ?? 'N/A',
+                                  Colors.blue,
+                                ),
+                                const SizedBox(height: 8),
+
+                                // Payment Method
+                                _buildInfoRow(
+                                  Icons.payment,
+                                  'Payment Method',
+                                  data['payment_method'] ?? 'N/A',
+                                  Colors.purple,
+                                ),
+                                const SizedBox(height: 8),
+
+                                // Mobile Number
+                                _buildInfoRow(
+                                  Icons.phone,
+                                  'Mobile',
+                                  data['phone'] ?? 'N/A',
+                                  Colors.orange,
+                                ),
+                                const SizedBox(height: 8),
+
+                                // Email
+                                _buildInfoRow(
+                                  Icons.email,
+                                  'Email',
+                                  data['email'] ?? data['user_email'] ?? 'N/A',
+                                  Colors.teal,
+                                ),
+                                const Divider(height: 24),
+
+                                // Items List
+                                const Text(
+                                  'Items Ordered:',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                ...items.map<Widget>((item) {
+                                  final productType = item['type'] ?? 'Product';
+                                  final quantity = item['quantity'] ?? 1;
+
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 6),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 4,
+                                          height: 4,
+                                          decoration: const BoxDecoration(
+                                            color: Colors.green,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            '$productType (Qty: $quantity)',
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }),
+                                const SizedBox(height: 12),
+
+                                // Total Cost
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.shade50,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text(
+                                        'Total Cost:',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                      Row(
+                                        children: [
+                                          const Text(
+                                            'LKR ',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                          Text(
+                                            data['total_cost'].toStringAsFixed(
+                                              2,
+                                            ),
+                                            style: const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.green,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),

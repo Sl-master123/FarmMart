@@ -11,6 +11,31 @@ class BuyerOrderProcess extends StatefulWidget {
 }
 
 class _BuyerOrderProcessState extends State<BuyerOrderProcess> {
+  Widget _buildInfoRow(IconData icon, String label, String value, Color color) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: color),
+        const SizedBox(width: 8),
+        Text(
+          '$label: ',
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -99,76 +124,37 @@ class _BuyerOrderProcessState extends State<BuyerOrderProcess> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Order ID and Date
+                            // Order ID, Date and Status
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Expanded(
-                                  child: Text(
-                                    'Order ID: ${order.id.substring(0, 8)}...',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Order #${order.id.substring(0, 8)}',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        formattedDate,
+                                        style: const TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  formattedDate,
-                                  style: const TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-
-                            // Items Count
-                            Text(
-                              'Items: ${items.length}',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-
-                            // Total and Status
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    const Text(
-                                      'Total: ',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                    const Text(
-                                      'LKR ',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                    Text(
-                                      '${data['total_cost'].toStringAsFixed(2)}',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                        color: Colors.blue,
-                                      ),
-                                    ),
-                                  ],
                                 ),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 4,
+                                    horizontal: 12,
+                                    vertical: 6,
                                   ),
                                   decoration: BoxDecoration(
                                     color: isCompleted
@@ -181,11 +167,141 @@ class _BuyerOrderProcessState extends State<BuyerOrderProcess> {
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 11,
-                                      fontWeight: FontWeight.w500,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ),
                               ],
+                            ),
+                            const Divider(height: 24),
+
+                            // Order From (Seller Info)
+                            _buildInfoRow(
+                              Icons.store,
+                              'Order From',
+                              'Farmers (${items.length} items)',
+                              Colors.green,
+                            ),
+                            const SizedBox(height: 8),
+
+                            // Delivery Address
+                            _buildInfoRow(
+                              Icons.location_on,
+                              'Delivery Address',
+                              data['address'] ?? 'N/A',
+                              Colors.red,
+                            ),
+                            const SizedBox(height: 8),
+
+                            // Delivery Method
+                            _buildInfoRow(
+                              Icons.local_shipping,
+                              'Delivery Method',
+                              data['delivery_method'] ?? 'N/A',
+                              Colors.blue,
+                            ),
+                            const SizedBox(height: 8),
+
+                            // Payment Method
+                            _buildInfoRow(
+                              Icons.payment,
+                              'Payment Method',
+                              data['payment_method'] ?? 'N/A',
+                              Colors.purple,
+                            ),
+                            const SizedBox(height: 8),
+
+                            // Contact Info
+                            _buildInfoRow(
+                              Icons.phone,
+                              'Mobile',
+                              data['phone'] ?? 'N/A',
+                              Colors.orange,
+                            ),
+                            const SizedBox(height: 8),
+
+                            _buildInfoRow(
+                              Icons.email,
+                              'Email',
+                              data['email'] ?? data['user_email'] ?? 'N/A',
+                              Colors.teal,
+                            ),
+                            const Divider(height: 24),
+
+                            // Items List
+                            const Text(
+                              'Items Ordered:',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            ...items.map((item) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 6),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 4,
+                                      height: 4,
+                                      decoration: const BoxDecoration(
+                                        color: Colors.blue,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        '${item['type'] ?? 'Item'} (Qty: ${item['quantity'] ?? 1})',
+                                        style: const TextStyle(fontSize: 12),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }),
+                            const SizedBox(height: 12),
+
+                            // Total Cost
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Total Cost:',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  Row(
+                                    children: [
+                                      const Text(
+                                        'LKR ',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                      Text(
+                                        data['total_cost'].toStringAsFixed(2),
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18,
+                                          color: Colors.blue,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),

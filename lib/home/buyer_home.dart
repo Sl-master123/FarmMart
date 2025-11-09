@@ -18,6 +18,7 @@ class _BuyerHomeState extends State<BuyerHome> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   List<Map<String, dynamic>> _allProducts = [];
   List<Map<String, dynamic>> _filteredProducts = [];
+  bool _isLoading = false;
 
   final List<String> riceTypes = [
     'Suwandel',
@@ -47,6 +48,8 @@ class _BuyerHomeState extends State<BuyerHome> {
   }
 
   Future<void> _fetchProducts() async {
+    setState(() => _isLoading = true);
+
     try {
       final snapshot = await _firestore.collection('farmer_posts').get();
 
@@ -90,12 +93,27 @@ class _BuyerHomeState extends State<BuyerHome> {
 
       setState(() {
         _allProducts = dataListWithRatings;
+        _isLoading = false;
         _applyFilters();
       });
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error fetching products: $e')));
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.error_outline, color: Colors.white),
+              SizedBox(width: 8),
+              Expanded(child: Text('Error fetching products: $e')),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
     }
   }
 
@@ -369,7 +387,18 @@ class _BuyerHomeState extends State<BuyerHome> {
               ),
             ),
             Expanded(
-              child: _filteredProducts.isEmpty
+              child: _isLoading
+                  ? const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircularProgressIndicator(color: Colors.blue),
+                          SizedBox(height: 16),
+                          Text('Loading products...'),
+                        ],
+                      ),
+                    )
+                  : _filteredProducts.isEmpty
                   ? const Center(child: Text("No products found"))
                   : GridView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 16),

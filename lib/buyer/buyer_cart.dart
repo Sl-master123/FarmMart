@@ -173,7 +173,7 @@ class _BuyerCartState extends State<BuyerCart> {
                                         ),
                                       ),
                                       Text(
-                                        '${total.toStringAsFixed(2)}',
+                                        total.toStringAsFixed(2),
                                         style: const TextStyle(
                                           fontSize: 15,
                                           fontWeight: FontWeight.bold,
@@ -243,7 +243,7 @@ class _BuyerCartState extends State<BuyerCart> {
                             ),
                           ),
                           Text(
-                            '${totalPrice.toStringAsFixed(2)}',
+                            totalPrice.toStringAsFixed(2),
                             style: const TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,

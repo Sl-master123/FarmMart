@@ -148,7 +148,7 @@ class _FarmerCartState extends State<FarmerCart> {
                                         style: TextStyle(color: Colors.grey),
                                       ),
                                       Text(
-                                        '${total.toStringAsFixed(2)}',
+                                        total.toStringAsFixed(2),
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 15,
@@ -210,7 +210,7 @@ class _FarmerCartState extends State<FarmerCart> {
                             style: TextStyle(color: Colors.grey, fontSize: 14),
                           ),
                           Text(
-                            '${totalPrice.toStringAsFixed(2)}',
+                            totalPrice.toStringAsFixed(2),
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.green,

@@ -19,6 +19,7 @@ class _FarmerHomeState extends State<FarmerHome> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   List<Map<String, dynamic>> _allProducts = [];
   List<Map<String, dynamic>> _filteredProducts = [];
+  bool _isLoading = false;
 
   final List<String> types = [
     'Fertilizers',
@@ -39,6 +40,8 @@ class _FarmerHomeState extends State<FarmerHome> {
   }
 
   Future<void> _fetchProducts() async {
+    setState(() => _isLoading = true);
+
     try {
       final collection = _selectedIndex == 1 ? 'farmer_posts' : 'seller_posts';
       final snapshot = await _firestore.collection(collection).get();
@@ -80,12 +83,27 @@ class _FarmerHomeState extends State<FarmerHome> {
 
       setState(() {
         _allProducts = dataListWithRatings;
+        _isLoading = false;
         _applyFilters();
       });
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error fetching products: $e')));
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.error_outline, color: Colors.white),
+              SizedBox(width: 8),
+              Expanded(child: Text('Error fetching products: $e')),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
     }
   }
 
@@ -174,13 +192,39 @@ class _FarmerHomeState extends State<FarmerHome> {
     try {
       await _firestore.collection('farmer_posts').doc(postId).delete();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Post deleted successfully')),
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 8),
+              Text('Post deleted successfully'),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
       );
       _fetchProducts();
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to delete post: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.error_outline, color: Colors.white),
+              SizedBox(width: 8),
+              Expanded(child: Text('Failed to delete post: $e')),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
     }
   }
 
@@ -370,7 +414,18 @@ class _FarmerHomeState extends State<FarmerHome> {
               ),
             ),
             Expanded(
-              child: _filteredProducts.isEmpty
+              child: _isLoading
+                  ? const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircularProgressIndicator(color: Colors.green),
+                          SizedBox(height: 16),
+                          Text('Loading products...'),
+                        ],
+                      ),
+                    )
+                  : _filteredProducts.isEmpty
                   ? const Center(child: Text("No products found"))
                   : GridView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 16),

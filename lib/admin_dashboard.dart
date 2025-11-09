@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:newadd/login/login.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:newadd/admin/edit_farmer_post_dialog.dart';
+import 'package:newadd/admin/edit_seller_post_dialog.dart';
 
 class AdminDashboard extends StatelessWidget {
   final String userEmail;
@@ -34,7 +36,7 @@ class AdminDashboard extends StatelessWidget {
           backgroundColor: const Color.fromARGB(255, 1, 17, 56),
           actions: [
             IconButton(
-              icon: const Icon(Icons.logout),
+              icon: const Icon(Icons.logout, color: Colors.white),
               tooltip: 'Logout',
               onPressed: () {
                 showDialog(
@@ -47,8 +49,11 @@ class AdminDashboard extends StatelessWidget {
                         child: const Text("Cancel"),
                         onPressed: () => Navigator.pop(context),
                       ),
-                      TextButton(
-                        child: const Text("Logout"),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                        ),
                         onPressed: () async {
                           Navigator.pop(context);
                           await FirebaseAuth.instance.signOut();
@@ -61,6 +66,7 @@ class AdminDashboard extends StatelessWidget {
                             (route) => false,
                           );
                         },
+                        child: const Text("Logout"),
                       ),
                     ],
                   ),
@@ -141,10 +147,35 @@ class UsersTab extends StatelessWidget {
                     IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
                       onPressed: () async {
-                        await FirebaseFirestore.instance
-                            .collection('users')
-                            .doc(userDoc.id)
-                            .delete();
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Delete User'),
+                            content: const Text(
+                              'Are you sure you want to delete this user? This action cannot be undone.',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('Cancel'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text(
+                                  'Delete',
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+
+                        if (confirm == true) {
+                          await FirebaseFirestore.instance
+                              .collection('users')
+                              .doc(userDoc.id)
+                              .delete();
+                        }
                       },
                     ),
                   ],
@@ -161,6 +192,18 @@ class UsersTab extends StatelessWidget {
 class FarmerPostsTab extends StatelessWidget {
   const FarmerPostsTab({super.key});
 
+  void _showEditDialog(
+    BuildContext context,
+    String postId,
+    Map<String, dynamic> postData,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) =>
+          EditFarmerPostDialog(postId: postId, postData: postData),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
@@ -175,28 +218,125 @@ class FarmerPostsTab extends StatelessWidget {
         return ListView.builder(
           itemCount: posts.length,
           itemBuilder: (context, index) {
-            final post = posts[index].data();
+            final postDoc = posts[index];
+            final post = postDoc.data();
+            final imageUrl = post['image_url'] ?? '';
+
             return Card(
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               elevation: 3,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: ListTile(
-                leading: const Icon(Icons.agriculture, color: Colors.green),
-                title: Text(post['rice_type'] ?? 'No Title'),
-                subtitle: Text(
-                  '${post['description']}\nBy: ${post['farmer_email']}',
-                ),
-                isThreeLine: true,
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () async {
-                    await FirebaseFirestore.instance
-                        .collection('farmer_posts')
-                        .doc(posts[index].id)
-                        .delete();
-                  },
+              child: InkWell(
+                onTap: () => _showEditDialog(context, postDoc.id, post),
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      // Image
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: imageUrl.isNotEmpty
+                            ? Image.network(
+                                imageUrl,
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    width: 80,
+                                    height: 80,
+                                    color: Colors.grey[300],
+                                    child: const Icon(
+                                      Icons.agriculture,
+                                      color: Colors.green,
+                                      size: 40,
+                                    ),
+                                  );
+                                },
+                              )
+                            : Container(
+                                width: 80,
+                                height: 80,
+                                color: Colors.grey[300],
+                                child: const Icon(
+                                  Icons.agriculture,
+                                  color: Colors.green,
+                                  size: 40,
+                                ),
+                              ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Content
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              post['rice_type'] ?? 'No Title',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              post['description'] ?? '',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'By: ${post['farmer_email'] ?? ''}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Delete button
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Delete Post'),
+                              content: const Text(
+                                'Are you sure you want to delete this post?',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
+                                  child: const Text('Cancel'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text(
+                                    'Delete',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+
+                          if (confirm == true) {
+                            await FirebaseFirestore.instance
+                                .collection('farmer_posts')
+                                .doc(postDoc.id)
+                                .delete();
+                          }
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );
@@ -209,6 +349,18 @@ class FarmerPostsTab extends StatelessWidget {
 
 class SellerPostsTab extends StatelessWidget {
   const SellerPostsTab({super.key});
+
+  void _showEditDialog(
+    BuildContext context,
+    String postId,
+    Map<String, dynamic> postData,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) =>
+          EditSellerPostDialog(postId: postId, postData: postData),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -224,28 +376,125 @@ class SellerPostsTab extends StatelessWidget {
         return ListView.builder(
           itemCount: posts.length,
           itemBuilder: (context, index) {
-            final post = posts[index].data();
+            final postDoc = posts[index];
+            final post = postDoc.data();
+            final imageUrl = post['image_url'] ?? '';
+
             return Card(
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               elevation: 3,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: ListTile(
-                leading: const Icon(Icons.shopping_cart, color: Colors.green),
-                title: Text(post['type'] ?? 'No Title'),
-                subtitle: Text(
-                  '${post['description']}\nBy: ${post['seller_email']}',
-                ),
-                isThreeLine: true,
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () async {
-                    await FirebaseFirestore.instance
-                        .collection('seller_posts')
-                        .doc(posts[index].id)
-                        .delete();
-                  },
+              child: InkWell(
+                onTap: () => _showEditDialog(context, postDoc.id, post),
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      // Image
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: imageUrl.isNotEmpty
+                            ? Image.network(
+                                imageUrl,
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    width: 80,
+                                    height: 80,
+                                    color: Colors.grey[300],
+                                    child: const Icon(
+                                      Icons.shopping_cart,
+                                      color: Colors.green,
+                                      size: 40,
+                                    ),
+                                  );
+                                },
+                              )
+                            : Container(
+                                width: 80,
+                                height: 80,
+                                color: Colors.grey[300],
+                                child: const Icon(
+                                  Icons.shopping_cart,
+                                  color: Colors.green,
+                                  size: 40,
+                                ),
+                              ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Content
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              post['type'] ?? 'No Title',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              post['description'] ?? '',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'By: ${post['seller_email'] ?? ''}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Delete button
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Delete Post'),
+                              content: const Text(
+                                'Are you sure you want to delete this post?',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
+                                  child: const Text('Cancel'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text(
+                                    'Delete',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+
+                          if (confirm == true) {
+                            await FirebaseFirestore.instance
+                                .collection('seller_posts')
+                                .doc(postDoc.id)
+                                .delete();
+                          }
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );

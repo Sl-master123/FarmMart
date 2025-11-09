@@ -1,26 +1,47 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:newadd/login/login.dart'; // Update with your login page import
+// Removed: url_launcher (no longer needed)
+// Connect to your login page as before
+import 'package:newadd/login/login.dart';
+// Import the contact page
+import 'package:newadd/contact.dart'; // <-- Update package name or path if different
 
 class ProfilePage extends StatelessWidget {
   final String userEmail;
 
   const ProfilePage({super.key, required this.userEmail});
 
-  void _openHelpCenter() async {
-    const url = 'https://www.vikumkalhara.free.nf';
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(Uri.parse(url));
-    } else {
-      throw 'Could not launch $url';
-    }
-  }
-
   void _logout(BuildContext context) {
-    // Add FirebaseAuth.instance.signOut() if using Firebase Auth
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginPage()),
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm Logout'),
+          content: const Text('Are you sure you want to logout?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+                // Add FirebaseAuth.instance.signOut() if using Firebase Auth
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Logout'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -28,6 +49,13 @@ class ProfilePage extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const EditProfilePage()),
+    );
+  }
+
+  void _openContact(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ContactPage()),
     );
   }
 
@@ -95,11 +123,12 @@ class ProfilePage extends StatelessWidget {
                 child: Text(userEmail),
               ),
               const SizedBox(height: 24),
+              // Help now opens ContactPage (no web)
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.headphones_outlined),
-                title: const Text('Help'),
-                onTap: _openHelpCenter,
+                title: const Text('Help / Contact'),
+                onTap: () => _openContact(context),
               ),
               ListTile(
                 contentPadding: EdgeInsets.zero,

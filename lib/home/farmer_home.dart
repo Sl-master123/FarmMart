@@ -4,6 +4,7 @@ import 'package:newadd/farmer/farmer_order_process.dart';
 import 'package:newadd/farmer/farmer_product_view.dart';
 import 'package:newadd/profile.dart';
 import 'package:newadd/farmer/farmer_add_post.dart';
+import 'package:newadd/farmer/farmer_edit_post.dart';
 
 class FarmerHome extends StatefulWidget {
   final String userEmail;
@@ -124,6 +125,60 @@ class _FarmerHomeState extends State<FarmerHome> {
     }
   }
 
+  Future<void> _editPost(Map<String, dynamic> product) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            FarmerEditPost(postId: product['id'], postData: product),
+      ),
+    );
+    if (result == true) {
+      _fetchProducts();
+    }
+  }
+
+  Future<double> _getAverageRating(String productId) async {
+    try {
+      final snapshot = await _firestore
+          .collection('feedback')
+          .where('product_id', isEqualTo: productId)
+          .get();
+
+      if (snapshot.docs.isEmpty) return 0.0;
+
+      double total = 0;
+      for (var doc in snapshot.docs) {
+        total += (doc.data()['rating'] ?? 0).toDouble();
+      }
+      return total / snapshot.docs.length;
+    } catch (e) {
+      return 0.0;
+    }
+  }
+
+  Widget _buildRatingStars(double rating, {double size = 14}) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(5, (index) {
+        return Icon(
+          index < rating.round() ? Icons.star : Icons.star_border,
+          color: Colors.amber,
+          size: size,
+        );
+      }),
+    );
+  }
+
+  // Helper function to get appropriate unit for product type
+  String _getProductUnit(String productType) {
+    final type = productType.toLowerCase();
+    if (type.contains('vehicle') || type.contains('equipment')) {
+      return '1 unit';
+    }
+    return '1kg';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -213,24 +268,13 @@ class _FarmerHomeState extends State<FarmerHome> {
                     itemCount: _filteredProducts.length,
                     itemBuilder: (context, index) {
                       final product = _filteredProducts[index];
-                      return Stack(
-                        children: [
-                          _buildProductCard(product),
-                          if (_selectedIndex == 1 &&
-                              product['user_email'] == widget.userEmail)
-                            Positioned(
-                              bottom: 4,
-                              right: 4,
-                              child: IconButton(
-                                icon: const Icon(
-                                  Icons.delete,
-                                  color: Colors.red,
-                                ),
-                                onPressed: () => _deletePost(product['id']),
-                              ),
-                            ),
-                        ],
-                      );
+                      final isMyPost =
+                          _selectedIndex == 1 &&
+                          product['user_email'] == widget.userEmail;
+
+                      return isMyPost
+                          ? _buildMyPostCard(product)
+                          : _buildProductCard(product);
                     },
                   ),
           ),
@@ -306,6 +350,167 @@ class _FarmerHomeState extends State<FarmerHome> {
     );
   }
 
+  Widget _buildMyPostCard(Map<String, dynamic> product) {
+    return FutureBuilder<double>(
+      future: _getAverageRating(product['id']),
+      builder: (context, snapshot) {
+        final rating = snapshot.data ?? 0.0;
+
+        return Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade200),
+            borderRadius: BorderRadius.circular(12),
+            color: Colors.white,
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 2,
+                offset: Offset(0, 1),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (product['image_url'] != null)
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(12),
+                  ),
+                  child: Image.network(
+                    product['image_url'],
+                    height: 100,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const SizedBox(
+                        height: 100,
+                        child: Center(child: Icon(Icons.broken_image)),
+                      );
+                    },
+                  ),
+                )
+              else
+                const SizedBox(
+                  height: 100,
+                  child: Center(child: Icon(Icons.image_not_supported)),
+                ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(6),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'LKR ${product['price']}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        product['type'],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          if (product['condition'] != null &&
+                              product['condition'].toString().isNotEmpty) ...[
+                            Flexible(
+                              child: Text(
+                                product['condition'],
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 9,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ),
+                            const Text(
+                              ' • ',
+                              style: TextStyle(fontSize: 9, color: Colors.grey),
+                            ),
+                          ],
+                          Text(
+                            _getProductUnit(product['type']),
+                            style: const TextStyle(
+                              fontSize: 9,
+                              color: Colors.grey,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      _buildRatingStars(rating, size: 10),
+                      const Spacer(),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () => _editPost(product),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 2,
+                                  vertical: 3,
+                                ),
+                                minimumSize: const Size(0, 22),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: const Text(
+                                'Edit',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 3),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () => _deletePost(product['id']),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 2,
+                                  vertical: 3,
+                                ),
+                                minimumSize: const Size(0, 22),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: const Text(
+                                'Delete',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildProductCard(Map<String, dynamic> product) {
     return GestureDetector(
       onTap: () {
@@ -358,35 +563,68 @@ class _FarmerHomeState extends State<FarmerHome> {
                 height: 100,
                 child: Center(child: Icon(Icons.image_not_supported)),
               ),
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'NEW',
-                    style: TextStyle(color: Colors.red, fontSize: 10),
-                  ),
-                  Text(
-                    'LKR ${product['price']}',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green,
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'NEW',
+                      style: TextStyle(color: Colors.red, fontSize: 10),
                     ),
-                  ),
-                  Text(
-                    product['type'],
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                  Text(
-                    product['condition'],
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 4),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      'LKR ${product['price']}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      product['type'],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                    Row(
+                      children: [
+                        if (product['condition'] != null &&
+                            product['condition'].toString().isNotEmpty)
+                          Expanded(
+                            child: Text(
+                              product['condition'],
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ),
+                        if (product['condition'] != null &&
+                            product['condition'].toString().isNotEmpty)
+                          const Text(
+                            ' • ',
+                            style: TextStyle(fontSize: 11, color: Colors.grey),
+                          ),
+                        Text(
+                          _getProductUnit(product['type']),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                  ],
+                ),
               ),
             ),
           ],

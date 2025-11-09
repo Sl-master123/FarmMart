@@ -22,7 +22,7 @@ dependencies:
   cupertino_icons: ^1.0.6
 
   # For external links (if needed in future)
-  url_launcher: ^6.2.5
+  url_launcher: ^6.3.0
 
   # Date formatting
   intl: ^0.20.2

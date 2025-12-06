@@ -19,8 +19,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Farmmart',
-      home: LoadingPage(), // You can change this to any entry screen later
+      title: 'Firestore Login App',//I have done
+      home: LoginPage(), // Starting point
     );
   }
 }
